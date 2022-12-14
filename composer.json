@@ -1,0 +1,37 @@
+{
+    "name": "lizmap/lizmap-import-module",
+    "type": "jelix-module",
+    "description": "Jelix module for Lizmap, enabling to import CSV data into PostgreSQL tables.",
+    "keywords": [
+        "module",
+        "jelix",
+        "lizmap",
+        "import"
+    ],
+    "homepage": "https://www.3liz.com/",
+    "license": "MPL-2.0",
+    "authors": [
+        {
+            "name": "3Liz",
+            "email": "info@3liz.com"
+        }
+    ],
+    "require": {
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "jelix": {
+            "modules": [
+                "import/"
+            ],
+            "autoconfig-access-16": {
+                "lizmap@3liz.com": {
+                    "import": {
+                        "__global": 1,
+                        "index": 1
+                    }
+                }
+            }
+        }
+    }
+}

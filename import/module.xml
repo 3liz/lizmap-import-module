@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="http://jelix.org/ns/module/1.0">
+    <info id="import" name="import" createdate="2022-12-10">
+        <version date="2022-12-10">0.1-pre</version>
+        <label lang="en_US">import</label>
+        <description lang="en_US" />
+        <license URL="">Mozilla Public Licence (MPL)</license>
+        <copyright>2022 3liz</copyright>
+        <creator name="3liz" email="info@3liz.com" active="true"/>
+        <homepageURL>http://3liz.com</homepageURL>
+    </info>
+    <dependencies>
+        <module name="lizmap" minversion="3.5.*" maxversion="3.6.*"/>
+    </dependencies>
+    <autoload>
+        <namespacePathMap name="LizmapImport" dir="lib"/>
+    </autoload>
+</module>

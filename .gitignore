@@ -1,0 +1,43 @@
+# OSX garbage
+.DS_Store
+
+# IDE
+.idea/
+
+# Python SQL tests
+*.pyc
+.venv
+venv
+
+# PHP
+.php_cs.cache
+
+# PHP Doc
+output/
+.phpdoc
+
+factory.manifest
+
+# MkDocs
+build/
+docs/CONTRIBUTING.md
+docs/CHANGELOG.md
+
+.ignore
+
+# Tests
+tests/sql/.pytest_cache
+tests/lizmap/www
+tests/lizmap/var
+tests/lizmap/qgis-server-plugins/
+tests/lizmap/local-python
+tests/lizmap/cache-python
+tests/.env
+.pytest_cache
+
+# VSCode ou Codium
+*.code-workspace
+
+# hidden files
+*.bak
+*~
