@@ -10,7 +10,11 @@ make clean
 
 # Run the different services
 make run
+
+# Add the needed data
+# Lizmap ACL
 make import-lizmap-acl
+# PostgreSQL test data
 ```
 
 - Open your browser at http://localhost:9085
@@ -46,4 +50,13 @@ execute `make shell`.
 
 ```bash
 make import-data
+```
+
+# Export the test data after some modification
+
+You can edit the data of the PostgreSQL database, and then update the content of
+the test data file `test_data.sql` with:
+
+```bash
+make export-data
 ```

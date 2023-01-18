@@ -13,6 +13,6 @@
         <module name="lizmap" minversion="3.5.*" maxversion="3.6.*"/>
     </dependencies>
     <autoload>
-        <namespacePathMap name="LizmapImport" dir="lib"/>
+        <namespacePathMap name="ImportCsv" dir="lib"/>
     </autoload>
 </module>

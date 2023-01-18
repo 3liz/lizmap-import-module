@@ -29,6 +29,7 @@ main:
 			shell: open a shell in Lizmap web container
 			install-plugins: install QGIS Server plugins
 			import-data: import test data inside the PostgreSQL database
+			export-data: export test data to tests/sql/test_data.sql
 
 			Note: Un fichier d'environment pour docker compose
 			est crée à chaque invocation de 'run'.
@@ -103,6 +104,12 @@ install-plugins: dirs
 import-data:
 	sql/import.sh
 
+export-data:
+	@echo "Export demo data to tests/sql/test_data.sql"
+	docker compose exec -u $(LIZMAP_USER_ID) pgsql /bin/sh -c " \
+		pg_dump -U postgres -d lizmap --no-owner --no-acl -n demo -Fp
+	" > $(shell pwd)/sql/test_data.sql
+
 import-lizmap-acl:
 	@echo "Set repositories and users rights if needed"
 	@echo "Set view project"
@@ -125,9 +132,3 @@ import-lizmap-acl:
 		php lizmap/cmd.php acl2right add __anonymous "lizmap.tools.layer.export" tests ; \
 		php lizmap/cmd.php acl2right add users "lizmap.tools.layer.export" tests ; \
 		php lizmap/cmd.php acl2right add admins "lizmap.tools.layer.export" tests'
-
-install-sabre-dav:
-	@echo "Install sabre/dav"
-	docker compose exec -u $(LIZMAP_USER_ID) lizmap /bin/sh -c ' \
-		cd lizmap/my-packages ; \
-		composer --ignore-platform-req=ext-dom --ignore-platform-req=ext-simplexml --ignore-platform-req=ext-ctype --ignore-platform-req=ext-xmlwriter --ignore-platform-req=ext-xmlreader require sabre/dav ~3.2.0'

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form xmlns="http://jelix.org/ns/forms/1.1" allowAnyOrigin="true">
+
+<upload ref="csv" required="true" maxsize="1000000" accept=".csv,text/csv,application/csv,text/comma-separated-values">
+    <label locale="import~import.input.csv"/>
+    <hint locale="import~import.input.csv.help"/>
+    <help locale="import~import.input.csv.help"/>
+</upload>
+
+<hidden ref="check_or_import"/>
+<hidden ref="repository"/>
+<hidden ref="project"/>
+<hidden ref="layer_name"/>
+
+<submit ref="check">
+    <label locale="import~import.input.check"/>
+    <hint locale="import~import.input.check.help"/>
+</submit>
+
+<submit ref="import">
+    <label locale="import~import.input.import"/>
+    <hint locale="import~import.input.import.help"/>
+</submit>
+
+</form>
