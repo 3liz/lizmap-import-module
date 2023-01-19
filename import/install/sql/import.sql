@@ -1,7 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS lizmap_import_module;
 
 -- Import CSV destination tables
-DROP TABLE IF EXISTS lizmap_import_module.import_csv_destination_tables;
 CREATE TABLE lizmap_import_module.import_csv_destination_tables (
     id serial primary key NOT NULL,
     table_schema text NOT NULL,
@@ -19,7 +18,6 @@ IS 'List all the tables for which data can be imported from CSV files'
 ;
 
 -- Rules to validate the fields values
-DROP TABLE IF EXISTS lizmap_import_module.import_csv_field_rules;
 CREATE TABLE lizmap_import_module.import_csv_field_rules (
     id serial not null PRIMARY KEY,
     target_table_schema text NOT NULL,
@@ -153,6 +151,9 @@ BEGIN
     ELSIF t = 'time' THEN
         PERFORM s::time;
         RETURN true;
+    ELSIF t = 'timestamp' THEN
+        PERFORM CAST(s AS timestamp);
+        RETURN true;
     ELSIF t = 'integer' THEN
         PERFORM s::integer;
         RETURN true;
@@ -161,6 +162,9 @@ BEGIN
         RETURN true;
     ELSIF t = 'text' THEN
         PERFORM s::text;
+        RETURN true;
+    ELSIF t = 'boolean' THEN
+        PERFORM s::boolean;
         RETURN true;
     ELSIF t = 'uuid' THEN
         PERFORM s::uuid;
