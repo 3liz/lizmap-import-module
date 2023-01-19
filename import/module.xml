@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="http://jelix.org/ns/module/1.0">
     <info id="import" name="import" createdate="2022-12-10">
-        <version date="2022-12-10">0.1-pre</version>
-        <label lang="en_US">import</label>
+        <version date="2023-01-19">1.0.0</version>
+        <label lang="en_US">Import</label>
         <description lang="en_US" />
         <license URL="">Mozilla Public Licence (MPL)</license>
         <copyright>2022 3liz</copyright>

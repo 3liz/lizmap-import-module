@@ -1,16 +1,16 @@
-# Lizmap import module
+# LizMap import module
 
 ## Presentation
 
-[Lizmap](https://www.lizmap.com/) module to enable the **import of data from CSV files**
+[LizMap](https://www.lizmap.com/) module to enable the **import of data from CSV files**
 into configured **PostgreSQL layers**.
 
-The map editor can **activate the import tool** for a layer inside a Lizmap project.
+The map editor can **activate the import tool** for a layer inside a LizMap project.
 
 When the user clicks on the configured layers in the `Layers` panel, a new interface
 will be displayed in the `Information` panel displayed at the right.
 
-![sub-dock interface](media/import_video_demo.webm)
+![sub-dock interface](media/import_video_demo.gif)
 
 The user can then **upload a CSV file** and either:
 
@@ -82,13 +82,14 @@ There are 2 tables used to store the module configuration:
 * `lizmap_module_import.import_csv_destination_tables`: the list of target layers
 * `lizmap_module_import.import_csv_field rules`: the list of rules for each target layer
 
-## `lizmap_module_import.import_csv_destination_tables`
+#### Destination tables
 
-It contains the list of target layers. You need to define:
+The table `lizmap_module_import.import_csv_destination_tables` contains
+the list of target layers. You need to define:
 
 * a PostgreSQL table **schema** & **name** which define the layer data source,
-* a Lizmap **repository key** and **project key** which define
-  on which Lizmap map to activate the import tool,
+* a LizMap **repository key** and **project key** which define
+  on which LizMap map to activate the import tool,
 * the **target fields** expected to be in the CSV, written as a PostgreSQL array of text `text[]`,
 * the **geometry source** (at present, only `lonlat` is possible but `wkt`
   will be supported in future versions.)
@@ -100,9 +101,13 @@ Example content:
 | 1  | demo         | trees      | tests             | import         | {height,genus,leaf_type}   | lonlat          | id_csv          |
 
 
-### Rules
+#### Field rules
 
-The **rules** are made to control that the data to import respect some **pre-defined conditions**.
+The table `lizmap_module_import.import_csv_field_rules` contains
+the list of the rules.
+
+These **rules** are made to control that the data to import from the CSV
+file respect some **pre-defined conditions**.
 
 You can have more than one line per target layer. The target layer is defined
 by its `target_table_schema` and `target_table_name`.
@@ -127,7 +132,7 @@ Example content:
 |----|---------------------|-------------------|---------------|--------------------|-----------------------------------------------|-------------|--------------------------------------------------------------------|------------|
 | 1  | demo                | trees             | not_null      | genus_not_null     | The field genus cannot be empty               |             | genus IS NOT NULL                                                  |            |
 | 2  | demo                | trees             | not_null      | leaf_type_not_null | The field leaf_type cannot be empty           |             | leaf_type IS NOT NULL                                              |            |
-| 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | "lizmap_import_module.import_csv_is_given_type(height, 'integer')" |            |
+| 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer') |            |
 | 4  | demo                | trees             | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                        |            |
 | 5  | demo                | trees             | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                               |            |
 
