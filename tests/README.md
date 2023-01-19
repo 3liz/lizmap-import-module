@@ -14,7 +14,9 @@ make run
 # Add the needed data
 # Lizmap ACL
 make import-lizmap-acl
-# PostgreSQL test data
+
+# PostgreSQL structure, test data and configuration
+make import-data
 ```
 
 - Open your browser at http://localhost:9085
@@ -45,12 +47,6 @@ psql service=lizmap-import
 
 If you want to enter into the lizmap container to execute some commands,
 execute `make shell`.
-
-## Add the test data
-
-```bash
-make import-data
-```
 
 # Export the test data after some modification
 

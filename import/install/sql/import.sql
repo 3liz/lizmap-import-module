@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS lizmap_import_module;
 
 -- Import CSV destination tables
-CREATE TABLE lizmap_import_module.import_csv_destination_tables (
+CREATE TABLE IF NOT EXISTS lizmap_import_module.import_csv_destination_tables (
     id serial primary key NOT NULL,
     table_schema text NOT NULL,
     table_name text NOT NULL,
@@ -18,7 +18,7 @@ IS 'List all the tables for which data can be imported from CSV files'
 ;
 
 -- Rules to validate the fields values
-CREATE TABLE lizmap_import_module.import_csv_field_rules (
+CREATE TABLE IF NOT EXISTS lizmap_import_module.import_csv_field_rules (
     id serial not null PRIMARY KEY,
     target_table_schema text NOT NULL,
     target_table_name text NOT NULL,
