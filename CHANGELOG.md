@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.1 - 2023-07-17
+
 ### Fixed
 
 * bad locale key name of the right name
