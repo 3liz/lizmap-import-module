@@ -1,16 +1,15 @@
 <?php
 
 /**
- * @package   lizmap
- * @subpackage import
  * @author    3liz
  * @copyright 2011-2019 3liz
- * @link      http://3liz.com
+ *
+ * @see      http://3liz.com
+ *
  * @license   Mozilla Public License : http://www.mozilla.org/MPL/
  */
 class serviceCtrl extends jController
 {
-
     private $project;
     private $repository;
     private $lizmapProject;
@@ -27,46 +26,38 @@ class serviceCtrl extends jController
      * Check that the given layer exists.
      * etc.
      *
-     * @return array The array with status (error, success) and message.
+     * @param mixed $repository
+     * @param mixed $project
+     * @param mixed $layerName
+     *
+     * @return array the array with status (error, success) and message
      */
     private function checkParameters($repository, $project, $layerName)
     {
-        if (!\jAcl2::check("lizmap.import.from.csv")) {
-            $data = array('status' => 'error', 'message' => 'No right to use the import CSV module');
-
-            return $data;
+        if (!\jAcl2::check('lizmap.import.from.csv')) {
+            return array('status' => 'error', 'message' => 'No right to use the import CSV module');
         }
 
         // Check parameters
         if (!$project) {
-            $data = array('status' => 'error', 'message' => 'Project not found');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'Project not found');
         }
         if (!$repository) {
-            $data = array('status' => 'error', 'message' => 'Repository not found');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'Repository not found');
         }
         if (!$layerName) {
-            $data = array('status' => 'error', 'message' => 'Layer name not found');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'Layer name not found');
         }
 
         // Check project
         $lizmapProject = lizmap::getProject($repository.'~'.$project);
         if (!$lizmapProject) {
-            $data = array('status' => 'error', 'message' => 'A problem occured while loading the project with Lizmap');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'A problem occured while loading the project with Lizmap');
         }
 
         // Check the user can access this project
         if (!$lizmapProject->checkAcl()) {
-            $data = array('status' => 'error', 'message' => jLocale::get('view~default.repository.access.denied'));
-
-            return $data;
+            return array('status' => 'error', 'message' => jLocale::get('view~default.repository.access.denied'));
         }
 
         // Set the properties
@@ -77,17 +68,13 @@ class serviceCtrl extends jController
         // Get the layer instance
         $l = $lizmapProject->findLayerByAnyName($layerName);
         if (!$l) {
-            $data = array('status' => 'error', 'message' => 'Layer '.$layerName.' does not exist');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'Layer '.$layerName.' does not exist');
         }
         $layer = $lizmapProject->getLayer($l->id);
 
         // Check if layer is a PostgreSQL layer
         if (!($layer->getProvider() == 'postgres')) {
-            $data = array('status' => 'error', 'message' => 'Layer '.$layerName.' is not a PostgreSQL layer');
-
-            return $data;
+            return array('status' => 'error', 'message' => 'Layer '.$layerName.' is not a PostgreSQL layer');
         }
 
         // Set the layer property
@@ -104,16 +91,16 @@ class serviceCtrl extends jController
         $this->schema = $schema;
         $this->tableName = $tableName;
 
-
         // Get layer profile
         $profile = $layer->getDatasourceProfile();
         $this->profile = $profile;
 
         return array(
             'status' => 'success',
-            'message' => 'Parameters OK'
+            'message' => 'Parameters OK',
         );
     }
+
     public function check()
     {
         $rep = $this->getResponse('json');
@@ -177,12 +164,10 @@ class serviceCtrl extends jController
 
     /**
      * Get the import form
-     * and return the HTML to load in the sub dock
-     *
+     * and return the HTML to load in the sub dock.
      */
-    function getForm()
+    public function getForm()
     {
-
         /** @var jResponseHtmlfragment $rep */
         $rep = $this->getResponse('htmlfragment');
 
@@ -202,7 +187,7 @@ class serviceCtrl extends jController
         // Get parameters
         $layerName = $this->param('layername');
 
-        $form = jForms::create("import~import");
+        $form = jForms::create('import~import');
         $form->setData('repository', $repository);
         $form->setData('project', $project);
         $form->setData('layer_name', $layerName);
@@ -214,9 +199,9 @@ class serviceCtrl extends jController
 
     /**
      * Get the data from the import form
-     * and return error or data depending on the status
+     * and return error or data depending on the status.
      */
-    function run()
+    public function run()
     {
         // Define the object to return
         $return = array(
@@ -224,21 +209,22 @@ class serviceCtrl extends jController
             'status_check' => 0,
             'status_import' => 0,
             'message' => '',
-            'data' =>  array('other' => array())
+            'data' => array('other' => array()),
         );
         $rep = $this->getResponse('json');
 
         // Check the right to import
-        if (!jAcl2::check("lizmap.import.from.csv")) {
+        if (!jAcl2::check('lizmap.import.from.csv')) {
             $return['message'] = jLocale::get('import~import.form.error.right');
             $rep->data = $return;
+
             return $rep;
         }
 
         // Get form
-        $form = jForms::get("import~import");
+        $form = jForms::get('import~import');
         if (!$form) {
-            $form = jForms::create("import~import");
+            $form = jForms::create('import~import');
         }
 
         // Automatic form check
@@ -248,6 +234,7 @@ class serviceCtrl extends jController
             $message = \jLocale::get('import~import.form.error.invalid');
             $return['message'] = $message;
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -269,6 +256,7 @@ class serviceCtrl extends jController
         if ($ext != 'csv') {
             $return['message'] = \jLocale::get('import~import.form.error.csv.mandatory');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -280,6 +268,7 @@ class serviceCtrl extends jController
         if (!$save_file) {
             $return['message'] = \jLocale::get('import~import.form.error.csv.upload.failed');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -298,6 +287,7 @@ class serviceCtrl extends jController
         if (!$check) {
             $return['message'] = $message;
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -306,6 +296,7 @@ class serviceCtrl extends jController
         if (!$check) {
             $return['message'] = $message;
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -314,14 +305,19 @@ class serviceCtrl extends jController
         if (!$check) {
             $return['message'] = \jLocale::get('import~import.form.error.cannot.create.temp.tables');
             $rep->data = $return;
+
             return $rep;
         }
 
         // Import the CSV data into the source temporary table
-        $check = $import->saveToSourceTemporaryTable();
+        list($check, $outputMessage) = $import->saveToSourceTemporaryTable();
         if (!$check) {
-            $return['message'] = \jLocale::get('import~import.form.error.load.csv.to.temp.tables');
+            $message = \jLocale::get('import~import.form.error.load.csv.to.temp.tables');
+            $message .= "\n";
+            $message .= $outputMessage;
+            $return['message'] = $message;
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -330,17 +326,19 @@ class serviceCtrl extends jController
         if (!$check) {
             $return['message'] = \jLocale::get('import~import.form.error.load.csv.to.temp.tables');
             $rep->data = $return;
+
             return $rep;
         }
 
         // Check that the unique id field contains unique values among all records
         $check = $import->checkUniqueIdFieldValues();
-        if (!is_array($check) || $check[0]->is_unique == 'error' ) {
+        if (!is_array($check) || $check[0]->is_unique == 'error') {
             $return['message'] = \jLocale::get(
                 'import~import.csv.mandatory.unique.id.field.not.unique',
                 array($check[0]->unique_id_field)
             );
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -350,6 +348,7 @@ class serviceCtrl extends jController
         if (!is_array($check_not_null)) {
             $return['message'] = \jLocale::get('import~import.form.error.cannot.check.data.empty.values');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -358,6 +357,7 @@ class serviceCtrl extends jController
         if (!is_array($check_format)) {
             $return['message'] = \jLocale::get('import~import.form.error.cannot.check.data.forma');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -366,6 +366,7 @@ class serviceCtrl extends jController
         if (!is_array($check_valid)) {
             $return['message'] = \jLocale::get('import~import.form.error.cannot.check.data.conformity');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -391,9 +392,10 @@ class serviceCtrl extends jController
         // If we only check, we can clean the data and return the response
         if ($action == 'check') {
             $return['action'] = 'check';
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -402,10 +404,11 @@ class serviceCtrl extends jController
 
         // We must NOT go on if the check has found some problems
         if (count($check_not_null) || count($check_format) || count($check_valid)) {
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $return['message'] = \jLocale::get('import~import.form.error.errors.in.conformity.test');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -416,25 +419,27 @@ class serviceCtrl extends jController
             $login = $user->login;
         }
         if (!$login) {
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $return['message'] = \jLocale::get('import~import.form.error.cannot.get.authenticated.user.login');
             $rep->data = $return;
+
             return $rep;
         }
 
         // Check for duplicates
         $check_duplicate = $import->checkCsvDataDuplicatedRecords();
         if (!is_array($check_duplicate)) {
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $return['message'] = \jLocale::get('import~import.form.error.cannot.check.duplicate.data');
             $rep->data = $return;
+
             return $rep;
         }
 
         if ($check_duplicate[0]->duplicate_count > 0) {
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $message = '';
             if ($check_duplicate[0]->duplicate_count > 0) {
@@ -448,6 +453,7 @@ class serviceCtrl extends jController
             $return['data']['duplicate_count'] = $check_duplicate[0]->duplicate_count;
             $return['data']['duplicate_ids'] = $check_duplicate[0]->duplicate_ids;
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -456,10 +462,11 @@ class serviceCtrl extends jController
         if (!$addMetadataColumn) {
             // Delete already imported data
             $import->deleteImportedData();
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $return['message'] = \jLocale::get('import~import.form.error.cannot.add.import.metadata.column', array($this->tableName));
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -468,10 +475,11 @@ class serviceCtrl extends jController
         if (!$importData || $importData === null) {
             // Delete already imported data
             $import->deleteImportedData();
-            jForms::destroy("import~import");
+            jForms::destroy('import~import');
             $import->clean();
             $return['message'] = \jLocale::get('import~import.form.error.data.import.failure');
             $rep->data = $return;
+
             return $rep;
         }
 
@@ -481,7 +489,7 @@ class serviceCtrl extends jController
         $return['message'] = \jLocale::get('import~import.form.error.data.import.success', array($this->tableName));
 
         // Clean
-        jForms::destroy("import~import");
+        jForms::destroy('import~import');
         $import->clean();
 
         // Return data
