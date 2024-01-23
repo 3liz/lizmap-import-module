@@ -465,7 +465,7 @@ class serviceCtrl extends jController
 
         // Import data
         $importData = $import->importCsvIntoTargetTable($login);
-        if (!$importData) {
+        if (!$importData || $importData === null) {
             // Delete already imported data
             $import->deleteImportedData();
             jForms::destroy("import~import");

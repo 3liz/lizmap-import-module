@@ -557,10 +557,11 @@ BEGIN
 
     sql_text = sql_text || format(
         $$
-            FROM "%1$s" AS s
+            FROM "%1$s"."%2$s" AS s
             ON CONFLICT DO NOTHING
-            RETURNING "%2$s"
+            RETURNING "%3$s"
         $$,
+        _target_schema,
         _temporary_table,
         _target_table_pkeys->0->>'field_name'
     );
