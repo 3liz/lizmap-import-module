@@ -1,11 +1,9 @@
 [modules]
 import.access=2
+import.installparam="postgresql_user_group=gis_group"
 
 [jResponseHtml]
 plugins = debugbar
-
-[simple_urlengine_entrypoints]
-admin="jacl2db~*@classic,jacl2db_admin~*@classic,jauthdb_admin~*@classic,master_admin~*@classic,admin~*@classic,jcommunity~*@classic,pgmetadataAdmin~*@classic"
 
 [mailer]
 webmasterEmail="hosting-no-reply@lizmap.com"

@@ -8,9 +8,9 @@ LIZMAP_DIR=$(shell pwd)/lizmap
 LIZMAP_USER_ID:=$(shell id -u)
 LIZMAP_USER_GID:=$(shell id -g)
 
-LIZMAP_VERSION_TAG:=3.5
+LIZMAP_VERSION_TAG:=3.7
 QGIS_VERSION_TAG:=ltr-rc
-POSTGIS_VERSION_TAG:=13-3
+POSTGIS_VERSION_TAG:=15-3
 
 QGIS_MAP_WORKERS:=1
 
@@ -27,11 +27,12 @@ main:
 			stop:  stop docker and remove containers
 			clean: reset containers and remove lizmap configuration
 			shell: open a shell in Lizmap web container
+			install-module: install the module on the Lizmap test instance
 			install-plugins: install QGIS Server plugins
-			import-data: import test data inside the PostgreSQL database
-			export-data: export test data to tests/sql/test_data.sql
+			import-test-data: import test data inside the PostgreSQL database
+			export-test-data: export test data to tests/sql/test_data.sql
 
-			Note: Un fichier d'environment pour docker compose
+			Note: Un fichier d'environnement pour docker compose
 			est crée à chaque invocation de 'run'.
 			Cela permet d'utiliser les commandes 'docker compose'
 			sans passer par le Makefile
@@ -78,33 +79,23 @@ pull:
 	docker pull 3liz/qgis-map-server:${QGIS_VERSION_TAG}
 	docker pull 3liz/postgis:${POSTGIS_VERSION_TAG}
 
-shell:
-	docker compose exec -u ${LIZMAP_USER_ID} lizmap /bin/sh -l
-
 install-plugins: dirs
 	@echo "Install QGIS server plugins"
 	docker run \
 		-u $(LIZMAP_USER_ID):$(LIZMAP_USER_GID) \
-		--rm -i \
+	    --rm -it \
 		-e QGSRV_SERVER_PLUGINPATH=/srv/plugins \
 		-e QGIS_PLUGIN_MANAGER_SOURCES_FILE=/tmp/sources-plugin-manager.list \
 		-e QGIS_PLUGIN_MANAGER_CACHE_DIR=/tmp/cache-plugin-manager \
 		-v $(LIZMAP_DIR)/qgis-server-plugins:/srv/plugins \
 		-v $(shell pwd)/:/src \
-		--entrypoint /bin/bash \
-		3liz/qgis-map-server:$(QGIS_VERSION_TAG) \
-		-c "
-		    echo "https://packages.3liz.org/pub/server-plugins-repository/unstable/plugins.[VERSION].xml" > /tmp/sources-plugin-manager.list
-		    qgis-plugin-manager update
-		    qgis-plugin-manager install 'Lizmap server'
-		    qgis-plugin-manager install atlasprint
-		    qgis-plugin-manager install wfsOutputExtension
-		"
+	    --entrypoint /src/add-server-plugins.sh \
+	    3liz/qgis-map-server:${QGIS_VERSION_TAG}
 
-import-data:
+import-test-data:
 	sql/import.sh
 
-export-data:
+export-test-data:
 	@echo "Export demo data to tests/sql/test_data.sql"
 	docker compose exec -u $(LIZMAP_USER_ID) pgsql /bin/sh -c " \
 		pg_dump -U postgres -d lizmap --no-owner --no-acl -n demo -Fp
@@ -114,21 +105,35 @@ import-lizmap-acl:
 	@echo "Set repositories and users rights if needed"
 	@echo "Set view project"
 	docker compose exec -u $(LIZMAP_USER_ID) lizmap /bin/sh -c ' \
-		php lizmap/cmd.php acl2right add __anonymous "lizmap.repositories.view" tests ; \
-		php lizmap/cmd.php acl2right add users "lizmap.repositories.view" tests ; \
-		php lizmap/cmd.php acl2right add admins "lizmap.repositories.view" tests'
+		php lizmap/console.php acl2:add __anonymous "lizmap.repositories.view" tests ; \
+		php lizmap/console.php acl2:add users "lizmap.repositories.view" tests ; \
+		php lizmap/console.php acl2:add admins "lizmap.repositories.view" tests'
 	@echo "Display WMS links"
 	docker compose exec -u $(LIZMAP_USER_ID) lizmap /bin/sh -c ' \
-		php lizmap/cmd.php acl2right add __anonymous "lizmap.tools.displayGetCapabilitiesLinks" tests ; \
-		php lizmap/cmd.php acl2right add users "lizmap.tools.displayGetCapabilitiesLinks" tests ; \
-		php lizmap/cmd.php acl2right add admins "lizmap.tools.displayGetCapabilitiesLinks" tests'
+		php lizmap/console.php acl2:add __anonymous "lizmap.tools.displayGetCapabilitiesLinks" tests ; \
+		php lizmap/console.php acl2:add users "lizmap.tools.displayGetCapabilitiesLinks" tests ; \
+		php lizmap/console.php acl2:add admins "lizmap.tools.displayGetCapabilitiesLinks" tests'
 	@echo "Edition"
 	docker compose exec -u $(LIZMAP_USER_ID) lizmap /bin/sh -c ' \
-		php lizmap/cmd.php acl2right add __anonymous "lizmap.tools.edition.use" tests ; \
-		php lizmap/cmd.php acl2right add users "lizmap.tools.edition.use" tests ; \
-		php lizmap/cmd.php acl2right add admins "lizmap.tools.edition.use" tests'
+		php lizmap/console.php acl2:add __anonymous "lizmap.tools.edition.use" tests ; \
+		php lizmap/console.php acl2:add users "lizmap.tools.edition.use" tests ; \
+		php lizmap/console.php acl2:add admins "lizmap.tools.edition.use" tests'
 	@echo "Export layers"
 	docker compose exec -u $(LIZMAP_USER_ID) lizmap /bin/sh -c ' \
-		php lizmap/cmd.php acl2right add __anonymous "lizmap.tools.layer.export" tests ; \
-		php lizmap/cmd.php acl2right add users "lizmap.tools.layer.export" tests ; \
-		php lizmap/cmd.php acl2right add admins "lizmap.tools.layer.export" tests'
+		php lizmap/console.php acl2:add __anonymous "lizmap.tools.layer.export" tests ; \
+		php lizmap/console.php acl2:add users "lizmap.tools.layer.export" tests ; \
+		php lizmap/console.php acl2:add admins "lizmap.tools.layer.export" tests'
+
+
+install-module:
+	@echo "Install module"
+	docker compose exec -u ${LIZMAP_USER_ID} lizmap php /www/lizmap/install/configurator.php --no-interaction import
+	docker compose exec -u ${LIZMAP_USER_ID} lizmap php /www/lizmap/install/installer.php -v
+	@echo "Add test configuration data (destination tables and field rules"
+	export PGPASSWORD=lizmap1234!; psql -h localhost -U lizmap -d lizmap -p 9087 -f sql/csv_import_rules.sql
+
+shell:
+	docker compose exec -u ${LIZMAP_USER_ID} lizmap /bin/sh -l
+
+postgres:
+	docker compose exec -u postgres pgsql psql lizmap

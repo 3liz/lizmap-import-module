@@ -60,6 +60,10 @@ of the import: the **user login**, the import **date and time**.
 }
 ```
 
+## Installation
+
+See [Installation instrutions](./INSTALL.md)
+
 ## Configuration
 
 The configuration of the **target layers** and of the **rules** are stored inside
@@ -135,17 +139,3 @@ Example content:
 | 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer') |            |
 | 4  | demo                | trees             | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                        |            |
 | 5  | demo                | trees             | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                               |            |
-
-
-## Install the module database schema
-
-At present, there is **no automatic system** that add the `lizmap_import_schema`
-with the tables and functions inside your PostgreSQL database, since you can have
-several PostgreSQL databases, and the module cannot detect automatically
-in which database to create the needed objects.
-
-This is why the SQL structure **must be manually added** in the chosen PostgreSQL database.
-
-To do so, please download the [PostgreSQL SQL file](import/install/sql/import.sql) and run it inside your database.
-
-You can add the `lizmap_import_module` schema inside several databases if needed.

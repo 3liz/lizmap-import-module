@@ -1,8 +1,8 @@
-# Run docker compose
+## Run Lizmap stack with docker compose
 
 Steps:
 
-- Launch Lizmap with docker compose
+* Launch Lizmap with docker compose
 
 ```bash
 # Clean previous versions (optional)
@@ -10,16 +10,46 @@ make clean
 
 # Run the different services
 make run
-
-# Add the needed data
-# Lizmap ACL
-make import-lizmap-acl
-
-# PostgreSQL structure, test data and configuration
-make import-data
 ```
 
-- Open your browser at http://localhost:9085
+* Open your browser at `http://localhost:9085`
+
+For more information, refer to the [docker compose documentation](https://docs.docker.com/compose/)
+
+
+## Add the test data
+
+You can add some test data in your docker test PostgreSQL database by running the SQL files `tests/sql/test_schema.sql` and `tests/sql/test_data.sql`.
+**You need to import these data before installing the module.**
+
+```bash
+make import-test-data
+```
+
+If you have modified your test data suite (for example after upgrading to a new version)
+please run :
+
+```bash
+make export-test-data
+```
+
+Then add the modified file `tests/sql/test_data.sql` to your pull request.
+
+
+## Install the module
+
+* Install the module with:
+
+```bash
+make install-module
+```
+
+* Add the needed Lizmap rights:
+
+
+```bash
+make import-lizmap-acl
+```
 
 ## Access to the dockerized PostgreSQL instance
 
@@ -47,12 +77,3 @@ psql service=lizmap-import
 
 If you want to enter into the lizmap container to execute some commands,
 execute `make shell`.
-
-# Export the test data after some modification
-
-You can edit the data of the PostgreSQL database, and then update the content of
-the test data file `test_data.sql` with:
-
-```bash
-make export-data
-```

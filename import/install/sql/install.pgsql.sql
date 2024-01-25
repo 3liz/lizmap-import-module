@@ -39,7 +39,7 @@ IS 'List of rules used to validate the format of data'
 
 -- Get a table regclass corresponding schema and table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_get_regclass_properties(regclass);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_get_regclass_properties(_source_table regclass)
+CREATE FUNCTION lizmap_import_module.import_csv_get_regclass_properties(_source_table regclass)
 RETURNS json AS $BODY$
 DECLARE infos json;
 BEGIN
@@ -65,7 +65,7 @@ IS 'Get a table regclass corresponding schema and table'
 
 -- Add the needed column in the target table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_add_metadata_column(text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_add_metadata_column(
+CREATE FUNCTION lizmap_import_module.import_csv_add_metadata_column(
     _target_schema text,
     _target_table text
 )
@@ -108,7 +108,7 @@ IS 'Add a "import_metadata" JSON column to a given tables'
 
 -- Get the primary key fields name and data type for a given table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_get_primary_keys(regclass);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_get_primary_keys(_target_table regclass)
+CREATE FUNCTION lizmap_import_module.import_csv_get_primary_keys(_target_table regclass)
 RETURNS json AS $BODY$
 DECLARE primary_keys json;
 BEGIN
@@ -135,7 +135,7 @@ IS 'Get the primary key fields name and data type for a given table';
 
 -- Check if a field value corresponds to the given type
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_is_given_type(text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_is_given_type(s text, t text)
+CREATE FUNCTION lizmap_import_module.import_csv_is_given_type(s text, t text)
 RETURNS BOOLEAN AS $BODY$
 BEGIN
     -- Avoid to test empty strings
@@ -185,7 +185,7 @@ This function can be extended to user defined data types if necessary'
 
 -- Check the validity of all the field values inside the given table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_validity(text, text, text, text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_check_validity(
+CREATE FUNCTION lizmap_import_module.import_csv_check_validity(
     _temporary_table text,
     _target_schema text,
     _target_table text,
@@ -307,7 +307,7 @@ IS 'Check the validity of the source data against the rules from the table impor
 
 -- Check for duplicates
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_duplicates(text, text, text, text[], text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_check_duplicates(
+CREATE FUNCTION lizmap_import_module.import_csv_check_duplicates(
     _temporary_table text,
     _target_schema text,
     _target_table text,
@@ -429,7 +429,7 @@ IS 'Check for duplicated data between the CSV source data and the target tables'
 
 -- Import the data from the temporary table to the target table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
+CREATE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _temporary_table text,
     _target_schema text,
     _target_table text,
@@ -583,7 +583,7 @@ IS 'Import the data from the temporary table into the target table'
 
 -- Delete the imported data, for example if errors have been encountered
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_delete_imported_data(text, text, text);
-CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_delete_imported_data(
+CREATE FUNCTION lizmap_import_module.import_csv_delete_imported_data(
     _temporary_table text,
     _target_schema text,
     _target_table text

@@ -1,14 +1,13 @@
 <?php
 
 /**
- * @package   lizmap
- * @subpackage import
  * @author    3liz
  * @copyright 2011-2019 3liz
- * @link      http://3liz.com
+ *
+ * @see      http://3liz.com
+ *
  * @license   Mozilla Public License : http://www.mozilla.org/MPL/
  */
-
 class importListener extends jEventListener
 {
     public function ongetMapAdditions($event)
@@ -22,9 +21,9 @@ class importListener extends jEventListener
         $importConfig['urls']['getForm'] = jUrl::get('import~service:getForm');
 
         $js = array();
-        $js[] = $basePath . 'import/js/import.js';
+        $js[] = $basePath . 'assets/import/js/import.js';
         $css = array();
-        $css[] = $basePath . 'import/css/import.css';
+        $css[] = $basePath . 'assets/import/css/import.css';
 
         $jsCode = array(
             'var importConfig = ' . json_encode($importConfig) . ';',
