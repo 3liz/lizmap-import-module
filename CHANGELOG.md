@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 1.1.0 - 2024-01-25
+
+### Added
+
+* Installation 
+  - Install the PostgreSQL schema, tables and functions during module installation
+  - Add installation parameter `postgresql_user_group` to give permissions to a dedicated
+    PostgreSQL role on the created schema, tables and functions
+
+### Changed
+
+* Add compatibility for Lizmap Web Client 3.7
+* CSS - remove old fashion gray background color
+
 ## 1.0.1 - 2023-07-17
 
 ### Fixed
