@@ -41,17 +41,12 @@
 #import-csv div.menu-content {
   font-size: 12px;
   line-height: normal;
-}
-
-#import-csv div.menu-content {
-  background-color: #F0F0F0;
   padding: 5px;
-  font-size: 12px;
 }
 
 #import-csv div.menu-content h4 {
-  color: darkred;
-  background-color: lightgray;
+  color: var(--color-contrasted-text, white);
+  background-color: var(--color-contrasted-elements, #43718c);;
   width: 100%;
   padding: 3px;
   font-size: 13px;
