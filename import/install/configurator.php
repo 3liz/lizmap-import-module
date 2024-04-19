@@ -17,6 +17,14 @@ class importModuleConfigurator extends \Jelix\Installer\Module\Configurator
         );
     }
 
+    public function getFilesToCopy()
+    {
+        return array(
+            '../www/css' => 'www:modules-assets/import/css',
+            '../www/js' => 'www:modules-assets/import/js',
+        );
+    }
+
     public function configure(Jelix\Installer\Module\API\ConfigurationHelpers $helpers)
     {
         // user_group : to which group the write access should be granted on the schema pgrouting
@@ -24,10 +32,5 @@ class importModuleConfigurator extends \Jelix\Installer\Module\Configurator
             'PostgreSQL group of user to grant access on the schema lizmap_import_module ?',
             $this->parameters['postgresql_user_group']
         );
-
-        // Copy CSS and JS files
-        $overwrite = true;
-        $helpers->copyDirectoryContent('../www/css', jApp::wwwPath('assets/import/css'), $overwrite);
-        $helpers->copyDirectoryContent('../www/js', jApp::wwwPath('assets/import/js'), $overwrite);
     }
 }

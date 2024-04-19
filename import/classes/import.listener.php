@@ -21,17 +21,17 @@ class importListener extends jEventListener
         $importConfig['urls']['getForm'] = jUrl::get('import~service:getForm');
 
         $js = array();
-        $js[] = $basePath . 'assets/import/js/import.js';
+        $js[] = $basePath.'modules-assets/import/js/import.js';
         $css = array();
-        $css[] = $basePath . 'assets/import/css/import.css';
+        $css[] = $basePath.'modules-assets/import/css/import.css';
 
         $jsCode = array(
-            'var importConfig = ' . json_encode($importConfig) . ';',
+            'var importConfig = '.json_encode($importConfig).';',
         );
 
         // Add translation
         $locales = $this->getLocales();
-        $jsCode[] = 'var importLocales = ' . json_encode($locales) . ';';
+        $jsCode[] = 'var importLocales = '.json_encode($locales).';';
 
         $event->add(
             array(
@@ -45,18 +45,18 @@ class importListener extends jEventListener
     private function getLocales($lang = null)
     {
         if (!$lang) {
-            $lang = jLocale::getCurrentLang() . '_' . jLocale::getCurrentCountry();
+            $lang = jLocale::getCurrentLang().'_'.jLocale::getCurrentCountry();
         }
 
         $data = array();
-        $path = jApp::getModulePath('import') . 'locales/' . $lang . '/import.UTF-8.properties';
+        $path = jApp::getModulePath('import').'locales/'.$lang.'/import.UTF-8.properties';
         if (file_exists($path)) {
             $lines = file($path);
             foreach ($lines as $lineNumber => $lineContent) {
                 if (!empty($lineContent) and $lineContent != '\n') {
                     $exp = explode('=', trim($lineContent));
                     if (!empty($exp[0])) {
-                        $data[$exp[0]] = jLocale::get('import~import.' . $exp[0], null, $lang);
+                        $data[$exp[0]] = jLocale::get('import~import.'.$exp[0], null, $lang);
                     }
                 }
             }

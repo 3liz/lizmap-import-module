@@ -127,7 +127,7 @@ import-lizmap-acl:
 
 install-module:
 	@echo "Install module"
-	docker compose exec -u ${LIZMAP_USER_ID} lizmap php /www/lizmap/install/configurator.php --no-interaction import
+	docker compose exec -u ${LIZMAP_USER_ID} lizmap php /www/lizmap/install/configurator.php --no-interaction --force import
 	docker compose exec -u ${LIZMAP_USER_ID} lizmap php /www/lizmap/install/installer.php -v
 	@echo "Add test configuration data (destination tables and field rules"
 	export PGPASSWORD=lizmap1234!; psql -h localhost -U lizmap -d lizmap -p 9087 -f sql/csv_import_rules.sql

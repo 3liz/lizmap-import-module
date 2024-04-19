@@ -8,7 +8,7 @@
  *
  * @license   Mozilla Public License : http://www.mozilla.org/MPL/
  */
-require_once __DIR__ . '/importDBInstallTrait.php';
+require_once __DIR__.'/importDBInstallTrait.php';
 
 class importModuleInstaller extends \Jelix\Installer\Module\Installer
 {
@@ -19,7 +19,7 @@ class importModuleInstaller extends \Jelix\Installer\Module\Installer
         $helpers->database()->useDbProfile('auth');
 
         // Get SQL template file
-        $sql_file = $this->getPath() . 'install/sql/install.pgsql.sql';
+        $sql_file = $this->getPath().'install/sql/install.pgsql.sql';
         $sql = jFile::read($sql_file);
         $db = $helpers->database()->dbConnection();
         $db->exec($sql);
@@ -31,8 +31,8 @@ class importModuleInstaller extends \Jelix\Installer\Module\Installer
         // We use overwrite to be sure the new versions of the JS files
         // will be used
         $overwrite = true;
-        $helpers->copyDirectoryContent('../www/css', jApp::wwwPath('assets/import/css'), $overwrite);
-        $helpers->copyDirectoryContent('../www/js', jApp::wwwPath('assets/import/js'), $overwrite);
+        $helpers->copyDirectoryContent('../www/css', jApp::wwwPath('modules-assets/import/css'), $overwrite);
+        $helpers->copyDirectoryContent('../www/js', jApp::wwwPath('modules-assets/import/js'), $overwrite);
 
         // Add right subject
         jAcl2DbManager::createRight('lizmap.import.from.csv', 'import~jacl2.lizmap.import.from.csv', 'lizmap.grp');
