@@ -2,11 +2,18 @@
 
 ## Unreleased
 
+## 1.1.1 - 2024-04-19
+
+### Changed
+
+* Installation - Move JS & CSS file into www/modules-assets/import/
+
+
 ## 1.1.0 - 2024-01-25
 
 ### Added
 
-* Installation 
+* Installation
   - Install the PostgreSQL schema, tables and functions during module installation
   - Add installation parameter `postgresql_user_group` to give permissions to a dedicated
     PostgreSQL role on the created schema, tables and functions
