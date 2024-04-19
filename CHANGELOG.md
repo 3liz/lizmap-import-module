@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.2 - 2024-04-19
+
+### Changed
+
+* Installation - Fix copy of JS & CSS during module configuration
+
 ## 1.1.1 - 2024-04-19
 
 ### Changed

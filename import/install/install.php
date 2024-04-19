@@ -27,13 +27,6 @@ class importModuleInstaller extends \Jelix\Installer\Module\Installer
         // Grant rights to the created schema
         $this->launchGrantIntoDb($db);
 
-        // Copy CSS and JS assets
-        // We use overwrite to be sure the new versions of the JS files
-        // will be used
-        $overwrite = true;
-        $helpers->copyDirectoryContent('../www/css', jApp::wwwPath('modules-assets/import/css'), $overwrite);
-        $helpers->copyDirectoryContent('../www/js', jApp::wwwPath('modules-assets/import/js'), $overwrite);
-
         // Add right subject
         jAcl2DbManager::createRight('lizmap.import.from.csv', 'import~jacl2.lizmap.import.from.csv', 'lizmap.grp');
 
