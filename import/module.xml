@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="http://jelix.org/ns/module/1.0">
     <info id="import" name="import" createdate="2022-12-10">
-        <version date="2024-04-19">1.1.2</version>
+        <version date="2024-10-09">1.2.0</version>
         <label lang="en_US">Import</label>
         <description lang="en_US" />
         <license URL="">Mozilla Public Licence (MPL)</license>
@@ -10,7 +10,7 @@
         <homepageURL>http://3liz.com</homepageURL>
     </info>
     <dependencies>
-        <module name="lizmap" minversion="3.6.*" maxversion="3.7.*"/>
+        <module name="lizmap" minversion="3.7.*" maxversion="3.8.*"/>
     </dependencies>
     <autoload>
         <namespacePathMap name="ImportCsv" dir="lib"/>

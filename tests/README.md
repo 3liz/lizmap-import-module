@@ -8,6 +8,9 @@ Steps:
 # Clean previous versions (optional)
 make clean
 
+# Pull docker images
+make pull
+
 # Run the different services
 make run
 ```

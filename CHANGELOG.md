@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 1.2.0 - 2024-10-09
+
+### Changed
+
+* Compatibility for Lizmap Web Client 3.7.x & 3.8.x
+
+### Fixed
+
+* Display the localized string in Lizmap Web Client administration panel
+  for the right `lizmap.import.from.csv` instead of the
+  locale string code
+
 ## 1.1.2 - 2024-04-19
 
 ### Changed
