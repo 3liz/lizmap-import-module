@@ -8,9 +8,11 @@
  * @link      http://3liz.com
  * @license   Mozilla Public License : http://www.mozilla.org/MPL/
  */
+require_once __DIR__.'/importDBInstallTrait.php';
 
 class importModuleUpgrader_1_2_0__1_3_0 extends \Jelix\Installer\Module\Installer
 {
+    use importDBInstallTrait;
 
     public $targetVersions = array(
         '1.3.0',

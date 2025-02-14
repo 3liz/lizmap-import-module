@@ -8,7 +8,7 @@
 
 * Improve the check for duplicates with a new configuration `duplicate_check_fields`
 * Compatibility for the upcoming Lizmap Web Client 3.9.x
-*
+
 ### Added
 
 * Allow the user to choose to `UPDATE` the table data with the conflicting data
