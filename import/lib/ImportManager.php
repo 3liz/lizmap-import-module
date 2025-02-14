@@ -64,6 +64,10 @@ class ImportManager
     // Name of the CSV field containing the unique ids (no necessarily imported)
     protected $uniqueIdField;
 
+    // List of CSV fields allowing to search for duplicates
+    // They behaves as a compound key to check for uniqueness between table and CSV
+    protected $duplicateCheckFields = array();
+
     /**
      * Constructor of the import class.
      *
@@ -106,15 +110,18 @@ class ImportManager
     public function setConfigurationFromDatabase()
     {
         $sql = "
-        SELECT table_schema, table_name,
-        array_to_string(target_fields, ',') AS target_fields,
-        geometry_source, unique_id_field
+        SELECT
+            table_schema, table_name,
+            array_to_string(target_fields, ',') AS target_fields,
+            geometry_source, unique_id_field,
+            array_to_string(duplicate_check_fields, ',') AS duplicate_check_fields
         FROM lizmap_import_module.import_csv_destination_tables
-        WHERE True
-        AND lizmap_repository = $1
-        AND lizmap_project = $2
-        AND table_schema = $3
-        AND table_name = $4
+        WHERE
+            True
+            AND lizmap_repository = $1
+            AND lizmap_project = $2
+            AND table_schema = $3
+            AND table_name = $4
         LIMIT 1
         ";
         $params = array(
@@ -144,6 +151,7 @@ class ImportManager
         $this->targetFields = explode(',', $data[0]->target_fields);
         $this->geometrySource = $data[0]->geometry_source;
         $this->uniqueIdField = $data[0]->unique_id_field;
+        $this->duplicateCheckFields = explode(',', $data[0]->duplicate_check_fields);
 
         return array(
             true,
@@ -362,7 +370,7 @@ class ImportManager
         // Create temporary table to store the CSV source data and the formatted imported data
         $tables = array(
             'source' => $this->header,
-            'target' => $this->targetFields,
+            'target' => array_unique(array_merge($this->targetFields, $this->duplicateCheckFields))
         );
         foreach ($tables as $name => $columns) {
             $sql = 'CREATE TABLE "'.$this->targetSchema.'"."'.$this->temporaryTable.'_'.$name.'" (';
@@ -571,14 +579,13 @@ class ImportManager
     {
         $sql = 'SELECT duplicate_count, duplicate_ids';
         $sql .= " FROM lizmap_import_module.import_csv_check_duplicates(
-            $1, $2, $3, string_to_array($4, ','), $5, $6
+            $1, $2, $3, string_to_array($4, ','), $5
         )";
         $params = array(
             $this->temporaryTable.'_target',
             $this->targetSchema,
             $this->targetTable,
-            implode(',', $this->targetFields),
-            $this->geometrySource,
+            implode(',', $this->duplicateCheckFields),
             $this->uniqueIdField,
         );
 
@@ -588,17 +595,21 @@ class ImportManager
     /**
      * Add the needed import_metadata column in the target table.
      *
+     * This method also add a unique ID
+     *
      * @return null|array Null if a SQL request has failed
      */
     public function addMetadataColumn()
     {
-        $sql = 'SELECT *';
-        $sql .= ' FROM lizmap_import_module.import_csv_add_metadata_column($1, $2)';
-        $sql .= ' WHERE True';
+        $sql = "SELECT *";
+        $sql .= " FROM lizmap_import_module.import_csv_add_metadata_column(
+            $1, $2, string_to_array($3, ',')
+        )";
 
         $params = array(
             $this->targetSchema,
             $this->targetTable,
+            implode(',', $this->duplicateCheckFields),
         );
 
         return $this->query($sql, $params);
@@ -617,7 +628,8 @@ class ImportManager
         // Import dans la table observation
         $sql = ' SELECT count(*) AS nb';
         $sql .= " FROM lizmap_import_module.import_csv_data_to_target_table(
-            $1, $2, $3, string_to_array($4, ','), $5, $6
+            $1, $2, $3, string_to_array($4, ','), $5, $6,
+            string_to_array($7, ',')
         )
         ";
         $params = array(
@@ -627,6 +639,7 @@ class ImportManager
             implode(',', $this->targetFields),
             $this->geometrySource,
             $login,
+            implode(',', $this->duplicateCheckFields),
         );
 
         $import_data = $this->query($sql, $params);

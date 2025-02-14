@@ -56,3 +56,8 @@
 #import-csv div.menu-content table tr th {
   font-size: 11px;
 }
+
+/* Improve position of help "?" aside form inputs */
+#jforms_import_import_upsert_label {
+  display: inline;
+}

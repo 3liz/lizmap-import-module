@@ -7,6 +7,12 @@
     <help locale="import~import.input.csv.help"/>
 </upload>
 
+<checkbox ref="upsert" valueoncheck="yes" valueonuncheck="no">
+    <label locale="import~import.input.upsert"/>
+    <hint locale="import~import.input.upsert.help"/>
+    <help locale="import~import.input.upsert.help"/>
+</checkbox>
+
 <hidden ref="check_or_import"/>
 <hidden ref="repository"/>
 <hidden ref="project"/>

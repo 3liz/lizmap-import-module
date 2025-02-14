@@ -13,7 +13,7 @@
                         {form $form, 'import~service:run', array(), 'htmlbootstrap'}
                         <div>
                             {formcontrols}
-                                {ctrl_label}&nbsp;&nbsp;{ctrl_control}
+                                <p>{ctrl_label}&nbsp;&nbsp;{ctrl_control}</p>
                             {/formcontrols}
                         </div>
                          <div style="margin-top: 30px;">

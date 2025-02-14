@@ -191,8 +191,8 @@ class serviceCtrl extends jController
         $form->setData('repository', $repository);
         $form->setData('project', $project);
         $form->setData('layer_name', $layerName);
-        $rep->tpl->assign('form', $form);
         $rep->tplname = 'import';
+        $rep->tpl->assign('form', $form);
 
         return $rep;
     }
@@ -427,39 +427,9 @@ class serviceCtrl extends jController
             return $rep;
         }
 
-        // Check for duplicates
-        $check_duplicate = $import->checkCsvDataDuplicatedRecords();
-        if (!is_array($check_duplicate)) {
-            jForms::destroy('import~import');
-            $import->clean();
-            $return['message'] = \jLocale::get('import~import.form.error.cannot.check.duplicate.data');
-            $rep->data = $return;
-
-            return $rep;
-        }
-
-        if ($check_duplicate[0]->duplicate_count > 0) {
-            jForms::destroy('import~import');
-            $import->clean();
-            $message = '';
-            if ($check_duplicate[0]->duplicate_count > 0) {
-                $message .= \jLocale::get(
-                    'import~import.form.error.lines.already.in.database',
-                    array($check_duplicate[0]->duplicate_count)
-                );
-            }
-
-            $return['message'] = $message;
-            $return['data']['duplicate_count'] = $check_duplicate[0]->duplicate_count;
-            $return['data']['duplicate_ids'] = $check_duplicate[0]->duplicate_ids;
-            $rep->data = $return;
-
-            return $rep;
-        }
-
         // Add the needed columns
         $addMetadataColumn = $import->addMetadataColumn();
-        if (!$addMetadataColumn) {
+        if (!is_array($addMetadataColumn) || $addMetadataColumn[0]->import_csv_add_metadata_column == 'f') {
             // Delete already imported data
             $import->deleteImportedData();
             jForms::destroy('import~import');
@@ -468,6 +438,39 @@ class serviceCtrl extends jController
             $rep->data = $return;
 
             return $rep;
+        }
+
+        // Check for duplicates
+        $upsertConflicts = $form->getData('upsert', 'no');
+        if ($upsertConflicts == 'no') {
+            $check_duplicate = $import->checkCsvDataDuplicatedRecords();
+            if (!is_array($check_duplicate)) {
+                jForms::destroy('import~import');
+                $import->clean();
+                $return['message'] = \jLocale::get('import~import.form.error.cannot.check.duplicate.data');
+                $rep->data = $return;
+
+                return $rep;
+            }
+
+            if ($check_duplicate[0]->duplicate_count > 0) {
+                jForms::destroy('import~import');
+                $import->clean();
+                $message = '';
+                if ($check_duplicate[0]->duplicate_count > 0) {
+                    $message .= \jLocale::get(
+                        'import~import.form.error.lines.already.in.database',
+                        array($check_duplicate[0]->duplicate_count)
+                    );
+                }
+
+                $return['message'] = $message;
+                $return['data']['duplicate_count'] = $check_duplicate[0]->duplicate_count;
+                $return['data']['duplicate_ids'] = $check_duplicate[0]->duplicate_ids;
+                $rep->data = $return;
+
+                return $rep;
+            }
         }
 
         // Import data

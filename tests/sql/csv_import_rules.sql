@@ -3,10 +3,18 @@ TRUNCATE lizmap_import_module.import_csv_destination_tables RESTART IDENTITY CAS
 TRUNCATE lizmap_import_module.import_csv_field_rules RESTART IDENTITY CASCADE;
 
 -- Add destination table
-INSERT INTO lizmap_import_module.import_csv_destination_tables
-(table_schema, table_name, lizmap_repository, lizmap_project, target_fields, geometry_source, unique_id_field)
-VALUES
-('demo', 'trees', 'tests', 'import', ARRAY['height', 'genus', 'leaf_type'], 'lonlat', 'id_csv')
+INSERT INTO lizmap_import_module.import_csv_destination_tables (
+        table_schema, table_name,
+        lizmap_repository, lizmap_project,
+        target_fields, geometry_source,
+        unique_id_field, duplicate_check_fields
+)
+VALUES (
+    'demo', 'trees',
+    'tests', 'import',
+    ARRAY['height', 'genus', 'leaf_type', 'tree_code'], 'lonlat',
+    'id_csv', ARRAY['genus', 'tree_code']
+)
 ;
 
 -- Add rules for this table
