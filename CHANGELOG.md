@@ -2,7 +2,17 @@
 
 ## Unreleased
 
-## 1.2.0 - 2024-10-09
+## 1.3.0 - 2025-02-14
+
+### Changed
+
+* Improve the check for duplicates with a new configuration `duplicate_check_fields`
+* Compatibility for the upcoming Lizmap Web Client 3.9.x
+*
+### Added
+
+* Allow the user to choose to `UPDATE` the table data with the conflicting data
+  from the CSV file. A new checkbox `Update conflicting data` has been added in the form.
 
 ### Changed
 

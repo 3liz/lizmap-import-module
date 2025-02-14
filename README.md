@@ -32,6 +32,8 @@ The map editor will configure:
   for all the **CSV features**.
 * The name of the **mandatory unique ID field** to allow identifying each record:
   the tool will check that this field is present and that its values are all unique.
+* The list of **fields** which must be used to **check for duplicates** between the
+  CSV data and the table data.
 
 If an **error is detected** (wrong CSV format, missing fields, missing unique id field, etc.)
 the tool will cancel the import and **display an error message**.
@@ -42,21 +44,31 @@ with the **problematic identifiers**.
 ![sub-dock interface](media/import_check_table.jpg)
 
 If some records contained in the CSV files are **duplicates** of some target layers
-records (in the PostgreSQL table), the whole import will be **canceled**. A list of the
+records (in the PostgreSQL table), the whole import will be **canceled** by default. A list of the
 **duplicated records identifiers** will be displayed.
+
+If the user checks the `Update conflicting data` checkbox, the data from the CSV file
+which are in conflicts will be used to **update** the table data with the new values
+instead of inserting new objects.
+
+Conflicts are detected thanks to the list of fields configured to check for duplicates.
+These fields are defined in the column `duplicate_check_fields` of the configuration table
+(see below).
 
 ![sub-dock interface](media/import_duplicate_table.jpg)
 
 After a **successful import**, the target layer will be **refreshed** in the map.
 
 The imported data will have a new `import_metadata` `JSON` field containing the metadata
-of the import: the **user login**, the import **date and time**.
+of the import: the **user login**, the import **date and time**,
+the **action** (`I` for INSERT, `U` for UPDATE).
 
 ```json
 {
     "import_login": "admin",
     "import_temp_table": "temp_1674060987_target",
-    "import_time": "2023-01-18T16:56:27"
+    "import_time": "2023-01-18T16:56:27",
+    "action": "I"
 }
 ```
 
@@ -100,9 +112,9 @@ the list of target layers. You need to define:
 
 Example content:
 
-| id | table_schema | table_name | lizmap_repository | lizmap_project | target_fields              | geometry_source | unique_id_field |
-|----|--------------|------------|-------------------|----------------|----------------------------|-----------------|-----------------|
-| 1  | demo         | trees      | tests             | import         | {height,genus,leaf_type}   | lonlat          | id_csv          |
+| id | table_schema | table_name | lizmap_repository | lizmap_project | target_fields                        | geometry_source | unique_id_field | duplicate_check_fields |
+|----|--------------|------------|-------------------|----------------|--------------------------------------|-----------------|-----------------|------------------------|
+| 1  | demo         | trees      | tests             | import         | {height,genus,leaf_type,tree_code}   | lonlat          | id_csv          | {genus,tree_code}      |
 
 
 #### Field rules

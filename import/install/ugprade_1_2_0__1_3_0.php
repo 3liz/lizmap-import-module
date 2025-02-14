@@ -16,7 +16,7 @@ class importModuleUpgrader_1_2_0__1_3_0 extends \Jelix\Installer\Module\Installe
         '1.3.0',
     );
 
-    public $date = '2025-02-12';
+    public $date = '2025-02-14';
 
     function install(Jelix\Installer\Module\API\InstallHelpers $helpers)
     {
