@@ -1,7 +1,7 @@
 # Requirements
 
 * a PostgreSQL database with the **postgis** and **uuid-ossp** extensions installed
-* Lizmap Web Client 3.6 or above
+* Lizmap Web Client 3.7 or above
 
 # Installation
 
@@ -17,10 +17,10 @@ composer require --working-dir=lizmap/my-packages "lizmap/lizmap-import-module"
 ```
 
 
-### Launching the installer with Lizmap Web Client 3.6
+### Launching the installer with Lizmap Web Client 3.7
 
 
-If you are using Lizmap Web Client **3.6 or higher**, execute
+If you are using Lizmap Web Client **3.7 or higher**, execute
 
 ```bash
 php lizmap/install/configurator.php import

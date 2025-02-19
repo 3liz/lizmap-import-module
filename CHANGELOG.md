@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.1 - 2025-02-19
+
+### Changed
+
+* Fix the filename of the upgrade script for 1.3.0
+
 ## 1.3.0 - 2025-02-14
 
 ### Changed
