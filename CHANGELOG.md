@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.3.2 - 2025-03-18
+
+### Fixed
+
+* SQL - Fix function `import_csv_add_metadata_column` to avoid error
+* SQL - Fix function `import_csv_data_to_target_table`:
+  cast input data with target column data type to avoid errors.
+
 ## 1.3.1 - 2025-02-19
 
 ### Changed

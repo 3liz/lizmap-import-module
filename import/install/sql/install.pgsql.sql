@@ -67,7 +67,7 @@ IS 'Get a table regclass corresponding schema and table'
 -- Add the needed column in the target table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_add_metadata_column(text, text);
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_add_metadata_column(text, text, text[]);
-CREATE FUNCTION lizmap_import_module.import_csv_add_metadata_column(
+CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_add_metadata_column(
     _target_schema text,
     _target_table text,
     _duplicate_check_fields text[]
@@ -112,10 +112,10 @@ BEGIN
         -- Create unique index
         sql_template = $$
             ALTER TABLE "%1$s"."%2$s"
-            DROP CONSTRAINT IF EXISTS lizmap_import_csv_unique_key
+            DROP CONSTRAINT IF EXISTS "%1$s_%2$s_import_csv_unique"
             ;
             ALTER TABLE "%1$s"."%2$s"
-            ADD CONSTRAINT lizmap_import_csv_unique_key
+            ADD CONSTRAINT "%1$s_%2$s_import_csv_unique"
             UNIQUE (%3$s);
             ;
         $$;
@@ -452,19 +452,21 @@ It uses the configuration stored in the column "duplicate_check_fields" of the t
 -- Import the data from the temporary table to the target table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text);
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text[]);
-CREATE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
+CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _temporary_table text,
     _target_schema text,
     _target_table text,
     _target_fields text[],
     _geometry_source text,
     _import_login text,
-    _duplicate_check_fields text[]
-)
-RETURNS TABLE (
-    created_id integer
-) AS
-$BODY$
+    _duplicate_check_fields text[])
+    RETURNS TABLE(created_id integer)
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
+AS $BODY$
 DECLARE
     sql_template TEXT;
     sql_text TEXT;
@@ -489,18 +491,13 @@ BEGIN
     );
 
     -- List of fields for SQL
-    _comma = '';
     _fields_sql_list = '';
-    FOR _var_csv_field IN
-        SELECT field FROM unnest(_target_fields) AS field
-    LOOP
-        sql_template = '%1$s "%2$s"';
-        _fields_sql_list = _fields_sql_list || format(sql_template,
-            _comma,
-            _var_csv_field
-        );
-        _comma = ', ';
-    END LOOP;
+    SELECT INTO _fields_sql_list
+        Coalesce(string_agg(concat('"', field, '"'), ', '), '')
+    FROM (
+        SELECT unnest(_target_fields) AS field
+    ) AS fields
+    ;
 
     -- geometry
     IF _geometry_source = 'lonlat' THEN
@@ -533,17 +530,18 @@ BEGIN
     $$;
 
     -- Values from the temporary table
-    _comma = '';
-    FOR _var_csv_field IN
-        SELECT field FROM unnest(_target_fields) AS field
-    LOOP
-        sql_template = '%1$s s.%2$s';
-        sql_text = sql_text || format(sql_template,
-            _comma,
-            quote_ident(_var_csv_field)
-        );
-        _comma = ', ';
-    END LOOP;
+    _fields_sql_list = '';
+    SELECT INTO _fields_sql_list
+        Coalesce(string_agg(concat('s."', column_name, '"::', data_type::text), ', '), '')
+    FROM information_schema.columns
+    JOIN (
+        SELECT unnest(_target_fields) as fields
+    ) AS field
+        ON column_name = fields
+    WHERE table_schema = _target_schema
+    AND table_name = _target_table
+    ;
+    sql_text = sql_text || _fields_sql_list;
 
     -- geometry value
     IF _geometry_source = 'lonlat' THEN
@@ -605,12 +603,13 @@ BEGIN
     -- If the data is already there, update
     sql_text = sql_text || format(
         $$
-            FROM "%1$s"."%2$s" AS s
-            ON CONFLICT ON CONSTRAINT lizmap_import_csv_unique_key
+            FROM "%1$s"."%3$s" AS s
+            ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
             DO UPDATE
             SET
         $$,
         _target_schema,
+        _target_table,
         _temporary_table
     );
 
@@ -663,10 +662,7 @@ BEGIN
     RETURN QUERY EXECUTE sql_text;
 
 END
-$BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100
-;
+$BODY$;
 
 COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text[])
 IS 'Import the data from the temporary table into the target table'
