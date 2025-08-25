@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Add the capability to get geometries from a `wkt` column in the CSV
+  instead of `longitude` and `latitude`
+
 ## 1.3.2 - 2025-03-18
 
 ### Fixed

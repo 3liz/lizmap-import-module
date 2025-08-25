@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS lizmap_import_module.import_csv_destination_tables (
     geometry_source text NOT NULL,
     unique_id_field text NOT NULL,
     duplicate_check_fields text[] NOT NULL,
-    CONSTRAINT import_csv_destination_tables_geometry_source_valid CHECK (geometry_source IN ('null', 'lonlat', 'wkt')),
+    CONSTRAINT import_csv_destination_tables_geometry_source_valid CHECK (geometry_source IN ('none', 'lonlat', 'wkt')),
     CONSTRAINT import_csv_destination_tables_unique UNIQUE (table_schema, table_name, lizmap_repository, lizmap_project)
 );
 COMMENT ON TABLE lizmap_import_module.import_csv_destination_tables
@@ -176,7 +176,7 @@ IS 'Get the primary key fields name and data type for a given table';
 
 -- Check if a field value corresponds to the given type
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_is_given_type(text, text);
-CREATE FUNCTION lizmap_import_module.import_csv_is_given_type(s text, t text)
+CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_is_given_type(s text, t text)
 RETURNS BOOLEAN AS $BODY$
 BEGIN
     -- Avoid to test empty strings
@@ -209,6 +209,9 @@ BEGIN
         RETURN true;
     ELSIF t = 'uuid' THEN
         PERFORM s::uuid;
+        RETURN true;
+    ELSIF t = 'wkt' THEN
+        PERFORM (ST_GeomFromText(s))::geometry;
         RETURN true;
     ELSE
         RETURN true;
@@ -500,7 +503,7 @@ BEGIN
     ;
 
     -- geometry
-    IF _geometry_source = 'lonlat' THEN
+    IF _geometry_source IN ('lonlat', 'wkt') THEN
         _fields_sql_list = _fields_sql_list || format(
             ', "%1$s" ',
             quote_ident(_geometry_columns_record.f_geometry_column)
@@ -557,6 +560,28 @@ BEGIN
                     ST_Transform(
                         ST_SetSRID(
                             ST_MakePoint(s.longitude::real, s.latitude::real),
+                            %1$s
+                        ),
+                        %1$s
+                    )
+                ELSE NULL
+            END
+        $$;
+        sql_text = sql_text || format(sql_template,
+            _geometry_columns_record.srid
+        );
+
+    ELSIF _geometry_source = 'wkt' THEN
+        sql_template = $$
+            ,
+            CASE
+                WHEN
+                    s.wkt IS NOT NULL
+                    AND lizmap_import_module.import_csv_is_given_type(s.wkt, 'wkt')
+                THEN
+                    ST_Transform(
+                        ST_SetSRID(
+                            ST_GeomFromText(s.wkt::text),
                             %1$s
                         ),
                         %1$s
@@ -627,7 +652,7 @@ BEGIN
     END LOOP;
 
     -- UPSERT geometry
-    IF _geometry_source = 'lonlat' THEN
+    IF _geometry_source IN ('lonlat', 'wkt') THEN
         sql_text = sql_text || format(
             ', "%1$s" = EXCLUDED."%1$s"',
             quote_ident(_geometry_columns_record.f_geometry_column)

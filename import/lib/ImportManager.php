@@ -59,7 +59,7 @@ class ImportManager
     protected $temporaryTable;
 
     // Source of the geometries in the CSV data
-    protected $geometrySource = 'wkt';
+    protected $geometrySource = 'none';
 
     // Name of the CSV field containing the unique ids (no necessarily imported)
     protected $uniqueIdField;
@@ -228,7 +228,10 @@ class ImportManager
 
         // Check geometry fields
         $hasNeededGeometryColumns = false;
-        if ($this->geometrySource == 'lonlat' && in_array('longitude', $header) && in_array('latitude', $header)) {
+        if ($this->geometrySource == 'lonlat'
+            && in_array('longitude', $header)
+            && in_array('latitude', $header)
+        ) {
             $hasNeededGeometryColumns = true;
             if (!in_array('longitude', $correspondingFields)) {
                 $correspondingFields[] = 'longitude';
@@ -236,11 +239,15 @@ class ImportManager
             if (!in_array('latitude', $correspondingFields)) {
                 $correspondingFields[] = 'latitude';
             }
-        } elseif ($this->geometrySource == 'wkt' && in_array('wkt', $header)) {
+        } elseif ($this->geometrySource == 'wkt'
+            && in_array('wkt', $header)
+        ) {
             $hasNeededGeometryColumns = true;
             if (!in_array('wkt', $correspondingFields)) {
                 $correspondingFields[] = 'wkt';
             }
+        } elseif ($this->geometrySource == 'none') {
+            $hasNeededGeometryColumns = true;
         }
         if (!$hasNeededGeometryColumns) {
             if ($this->geometrySource == 'lonlat') {
@@ -382,6 +389,8 @@ class ImportManager
                 if ($this->geometrySource == 'lonlat') {
                     $sql .= ', "longitude" text';
                     $sql .= ', "latitude" text';
+                } elseif ($this->geometrySource == 'wkt') {
+                    $sql .= ', "wkt" text';
                 }
             }
             $comma = ',';

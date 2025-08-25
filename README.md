@@ -25,9 +25,7 @@ The map editor will configure:
   PostgreSQL `schema` and `table` must be specified.
 * which **group(s) of users** can access the tool in the map interface.
 * which **fields** can be imported in the target table
-* if the CSV contains **geometry data**: then two fields `longitude` and `latitude`
-  must be present in the CSV file. (At present, this tool only allows the import of
-  geometries for **point data**)
+* if the CSV contains **geometry data** and of which type (`lonlat`, `wkt`, `none`)
 * the set of **rules** that define a **valid record**. Each rule will be tested
   for all the **CSV features**.
 * The name of the **mandatory unique ID field** to allow identifying each record:
@@ -107,8 +105,11 @@ the list of target layers. You need to define:
 * a LizMap **repository key** and **project key** which define
   on which LizMap map to activate the import tool,
 * the **target fields** expected to be in the CSV, written as a PostgreSQL array of text `text[]`,
-* the **geometry source** (at present, only `lonlat` is possible but `wkt`
-  will be supported in future versions.)
+* the **geometry source**, can be one of the following values:
+  * `none` : No geometries - the source data has no geometries, or you want to insert/update only the attributes
+  * `lonlat`: Longitude & Latitude - you need to have 2 fields named `longitude` and `latitude`
+    containing valid coordinates
+  * `wkt`: WKT - you must provide a WKT representation of the observation geometries in a field named `wkt`
 
 Example content:
 
@@ -132,7 +133,10 @@ The `criteria_type` column must only accept values among:
 
 * `not_null`: the rule defines that the field must not be empty (or `NULL`)
 * `format`: the rule checks if the given value for the field is in the desired format
-  (`integer`, `real`, `text`, `uuid`, `boolean`, `date`, `time`, `timestamp`)
+  (`integer`, `real`, `text`, `uuid`, `boolean`, `date`, `time`, `timestamp`, `wkt`).
+  **You must manually add format validation for longitude, latitude, or WKT column if needed**
+    * longitude & latitude must be `real`
+    * wkt must be `wkt`
 * `valid`: the rule refers to a specific condition.
 
 The `code` column is made to store a **simple name** for your rule. The `label` must be used
@@ -144,10 +148,18 @@ in the examples below.
 
 Example content:
 
-| id | target_table_schema | target_table_name | criteria_type | code               | label                                         | description | condition                                                          | join_table |
-|----|---------------------|-------------------|---------------|--------------------|-----------------------------------------------|-------------|--------------------------------------------------------------------|------------|
-| 1  | demo                | trees             | not_null      | genus_not_null     | The field genus cannot be empty               |             | genus IS NOT NULL                                                  |            |
-| 2  | demo                | trees             | not_null      | leaf_type_not_null | The field leaf_type cannot be empty           |             | leaf_type IS NOT NULL                                              |            |
-| 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer') |            |
-| 4  | demo                | trees             | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                        |            |
-| 5  | demo                | trees             | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                               |            |
+| id | target_table_schema | target_table_name | criteria_type | code               | label                                         | description | condition                                                            | join_table |
+|----|---------------------|-------------------|---------------|--------------------|-----------------------------------------------|-------------|----------------------------------------------------------------------|------------|
+| 1  | demo                | trees             | not_null      | genus_not_null     | The field genus cannot be empty               |             | genus IS NOT NULL                                                    |            |
+| 2  | demo                | trees             | not_null      | leaf_type_not_null | The field leaf_type cannot be empty           |             | leaf_type IS NOT NULL                                                |            |
+| 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer')     |            |
+| 4  | demo                | trees             | format        | longitude_format   | The field longitude must be a real number     |             | lizmap_import_module.import_csv_is_given_type(longitude, 'real')     |            |
+| 5  | demo                | trees             | format        | latitude_format    | The field latitude must be a real number      |             | lizmap_import_module.import_csv_is_given_type(latitude, 'real')      |            |
+| 6  | demo                | trees             | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                          |            |
+| 7  | demo                | trees             | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                                 |            |
+
+Example of a rule to check for the WKT column format:
+
+| id | target_table_schema | target_table_name | criteria_type | code        | label                                    | description | condition                                                 | join_table |
+|----|---------------------|-------------------|---------------|-------------|------------------------------------------|-------------|-----------------------------------------------------------|------------|
+| 8  | demo                | trees             | format        | wkt_format  | The field wkt must be a valid WKT string |             | lizmap_import_module.import_csv_is_given_type(wkt, 'wkt') |            |

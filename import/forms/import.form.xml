@@ -7,6 +7,18 @@
     <help locale="import~import.input.csv.help"/>
 </upload>
 
+<!--
+NOT USED BECAUSE THE CONFIGURATION IS DONE IN TABLE "import_csv_destination_tables"
+<menulist ref="geometry_format" required="true">
+    <label locale="import~import.input.geometry_format"/>
+    <hint locale="import~import.input.geometry_format.help"/>
+    <help locale="import~import.input.geometry_format.help"/>
+
+    <item locale="import~import.input.geometry_format.item.none.label" value="none" />
+    <item locale="import~import.input.geometry_format.item.lonlat.label" value="lonlat" />
+    <item locale="import~import.input.geometry_format.item.wkt.label" value="wkt" />
+</menulist> -->
+
 <checkbox ref="upsert" valueoncheck="yes" valueonuncheck="no">
     <label locale="import~import.input.upsert"/>
     <hint locale="import~import.input.upsert.help"/>
