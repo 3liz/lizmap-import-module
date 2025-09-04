@@ -453,21 +453,48 @@ class serviceCtrl extends jController
 
                 return $rep;
             }
-
             if ($check_duplicate[0]->duplicate_count > 0) {
                 jForms::destroy('import~import');
                 $import->clean();
-                $message = '';
-                if ($check_duplicate[0]->duplicate_count > 0) {
-                    $message .= \jLocale::get(
-                        'import~import.form.error.lines.already.in.database',
-                        array($check_duplicate[0]->duplicate_count)
-                    );
-                }
+                $message = \jLocale::get(
+                    'import~import.form.error.lines.already.in.database',
+                    array($check_duplicate[0]->duplicate_count)
+                );
 
                 $return['message'] = $message;
                 $return['data']['duplicate_count'] = $check_duplicate[0]->duplicate_count;
                 $return['data']['duplicate_ids'] = $check_duplicate[0]->duplicate_ids;
+                $rep->data = $return;
+
+                return $rep;
+            }
+        }
+
+        // For update only, check of the CSV unique id field
+        // contain values that are in the target table
+        // Cancel otherwise
+        if ($importType == 'update') {
+            $check_ids = $import->checkCsvDataContainsGivenIds();
+            if (!is_array($check_ids)) {
+                jForms::destroy('import~import');
+                $import->clean();
+                $return['message'] = \jLocale::get('import~import.form.error.cannot.check.missing.ids');
+                $rep->data = $return;
+
+                return $rep;
+            }
+
+            if ($check_ids[0]->missing_count > 0) {
+                jForms::destroy('import~import');
+                $import->clean();
+                $message = \jLocale::get(
+                    'import~import.form.error.csv.for.update.contains.missing.ids',
+                    array($check_ids[0]->missing_count)
+                );
+
+                $return['message'] = $message;
+                $return['data']['missing_count'] = $check_ids[0]->missing_count;
+                $return['data']['missing_ids'] = $check_ids[0]->missing_ids;
                 $rep->data = $return;
 
                 return $rep;
@@ -494,7 +521,7 @@ class serviceCtrl extends jController
 
         // Clean
         jForms::destroy('import~import');
-        $import->clean();
+        // $import->clean();
 
         // Return data
         $rep->data = $return;

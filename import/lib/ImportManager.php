@@ -617,6 +617,27 @@ class ImportManager
     }
 
     /**
+     * For update only, check that the values of the unique_id_field
+     * in the CSV are present in the target table
+     *
+     * @return null|array null if a SQL request has failed, and array with unexisting IDs otherwise
+     *                    We expect this array to be empty
+     */
+    public function checkCsvDataContainsGivenIds()
+    {
+        $sql = ' SELECT count("'.$this->uniqueIdField.'")::smallint AS missing_count, ';
+        $sql .= ' string_agg("'.$this->uniqueIdField.'"::text, \', \' ORDER BY "'.$this->uniqueIdField.'") AS missing_ids ';
+        $sql .= ' FROM "'.$this->targetSchema.'"."'.$this->temporaryTable.'_target" ';
+        $sql .= ' WHERE "'.$this->uniqueIdField.'" NOT IN ( ';
+        $sql .= '     SELECT "'.$this->uniqueIdField.'" ';
+        $sql .= '     FROM "'.$this->targetSchema.'"."'.$this->targetTable.'" ';
+        $sql .= ') ';
+        $params = array();
+
+        return $this->query($sql, $params);
+    }
+
+    /**
      * Add the needed import_metadata column in the target table.
      *
      * This method also add a unique ID

@@ -50,14 +50,18 @@ Depending on the configured type of import (insert, upsert or update), the behav
 
 * If the import type is configured as `upsert`, the data from the CSV file
   which are in conflicts will be used to **update** the table data with the new values
-  instead of inserting new objects. The data not already present in the table
-  will stil be insert from the CSV to the table.
-  Conflicts are detected thanks to the list of fields configured to check for duplicates.
+  instead of inserting new objects (only if the new data is different from the table data).
+  The data which are not already present in the table will still be inserted from the CSV to the table.
+  **Conflicts** are detected thanks to the list of fields configured to check for duplicates.
   These fields are defined in the column `duplicate_check_fields` of the configuration table
   (see below)
 
 * If the import type is configured as `update`, data will be updated based
   on the field configured in the `unique_id_field` parameter (see below)
+  only if the CSV data is different from the table data.
+  This way, if you import multiple times the same CSV file, the update will be done
+  only the first time.
+  If some unique ID are not found in the target table, the import will be **canceled**
 
 ![sub-dock interface](media/import_duplicate_table.jpg)
 

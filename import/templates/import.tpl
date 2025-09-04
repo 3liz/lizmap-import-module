@@ -90,6 +90,14 @@
                                 <td id="import_errors_nombre">-</td>
                                 <td id="import_errors_ids">-</td>
                             </tr>
+                            <tr>
+                                <th>{@import~import.tab.result.missing.count@}</th>
+                                <th>{@import~import.tab.result.missing.ids@}</th>
+                            </tr>
+                            <tr>
+                                <td id="import_errors_missing_count">-</td>
+                                <td id="import_errors_missing_ids">-</td>
+                            </tr>
                         </table>
                     </div>
 

@@ -78,6 +78,10 @@ This function can be extended to user defined data types if necessary'
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text);
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text[]);
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text);
+-- FUNCTION: lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text)
+
+-- DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text);
+
 CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _temporary_table text,
     _target_schema text,
@@ -103,6 +107,7 @@ DECLARE
     _fields_sql_list text;
     _geometry_columns_record record;
     _some_text text;
+    _update_when_needed text;
 BEGIN
 
     -- Get target table SRID (projection id)
@@ -149,8 +154,8 @@ BEGIN
             UPDATE "%1$s"."%2$s" AS t
             SET (
         $$;
-
     END IF;
+
     sql_text = sql_text || format(sql_template,
         _target_schema,
         _target_table
@@ -279,7 +284,46 @@ BEGIN
         _temporary_table
     );
 
+    -- Build the SQL WHERE clause to update or upsert only when needed
+    IF _import_type IN ('update', 'upsert') THEN
+        _update_when_needed = '
+            AND (
+        ';
+        _comma = '';
+        FOR _var_csv_field IN
+            SELECT field FROM unnest(_target_fields) AS field
+        LOOP
+            IF _import_type = 'update' THEN
+                sql_template = ' %1$s t."%2$s" != f."%2$s"';
+            ELSE
+                sql_template = ' %1$s t."%2$s" != EXCLUDED."%2$s"';
+            END IF;
+            _update_when_needed = _update_when_needed || format(sql_template,
+                _comma,
+                _var_csv_field
+            );
+            _comma = ' OR ';
+        END LOOP;
+
+        IF _geometry_source IN ('lonlat', 'wkt') THEN
+            _update_when_needed = _update_when_needed || format(
+                CASE
+                    WHEN _import_type = 'update'
+                    THEN ' OR t."%1$s" != f."%1$s"'
+                    ELSE ' OR t."%1$s" != EXCLUDED."%1$s"'
+                END,
+                quote_ident(_geometry_columns_record.f_geometry_column)
+            );
+        END IF;
+        _update_when_needed = _update_when_needed || '
+            )
+        ';
+
+        RAISE NOTICE 'update_when_needed = %', _update_when_needed;
+    END IF;
+
     -- Adapt SQL depending on the import type
+    -- UPDATE
     IF _import_type = 'update' THEN
         sql_text = sql_text || format(
             $$
@@ -289,6 +333,8 @@ BEGIN
             $$,
             _unique_id_field
         );
+        -- update only when needed
+        sql_text = sql_text || _update_when_needed;
 
     END IF;
 
@@ -353,30 +399,9 @@ BEGIN
         ;
 
         -- UPSERT only when needed
-        sql_text = sql_text || '
-            WHERE True AND (
-        ';
-        _comma = '';
-        FOR _var_csv_field IN
-            SELECT field FROM unnest(_target_fields) AS field
-        LOOP
-            sql_template = ' %1$s t."%2$s" != EXCLUDED."%2$s"';
-            sql_text = sql_text || format(sql_template,
-                _comma,
-                _var_csv_field
-            );
-            _comma = ' OR ';
-        END LOOP;
-
-        IF _geometry_source IN ('lonlat', 'wkt') THEN
-            sql_text = sql_text || format(
-                ' OR t."%1$s" != EXCLUDED."%1$s"',
-                quote_ident(_geometry_columns_record.f_geometry_column)
-            );
-        END IF;
-        sql_text = sql_text || '
-            )
-        ';
+        sql_text = sql_text || $$
+            WHERE True
+        $$ || _update_when_needed;
     END IF;
 
     -- return the primary keys inserted or modified

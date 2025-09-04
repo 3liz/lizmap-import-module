@@ -201,9 +201,14 @@
 
                     if (status_import == 'error') {
                         // Add data in the error table
-                        if ('duplicate_ids' in response.data) {
-                            $('#import_errors_nombre').html(response.data['duplicate_count']);
-                            $('#import_errors_ids').html(response.data['duplicate_ids'])
+                        if ('duplicate_ids' in response.data || 'missing_ids' in response.data) {
+                            if ('duplicate_ids' in response.data) {
+                                $('#import_errors_nombre').html(response.data['duplicate_count']);
+                                $('#import_errors_ids').html(response.data['duplicate_ids'])
+                            } else {
+                                $('#import_errors_missing_count').html(response.data['missing_count']);
+                                $('#import_errors_missing_ids').html(response.data['missing_ids'])
+                            }
                             $('#import_errors').show();
                             $('a[href="#import_results_tab"]').click();
                         } else {
@@ -224,6 +229,8 @@
                         $('#import_errors').hide();
                         $('#import_errors_nombre').html('-');
                         $('#import_errors_ids').html('-');
+                        $('#import_errors_missing_count').html('-');
+                        $('#import_errors_missing_ids').html('-');
 
                         // Add data in the result table
                         $('#import_results_table').html(response.data['records']['nb']);
