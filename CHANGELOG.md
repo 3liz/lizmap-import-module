@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+## 1.4.0 - 2025-09-04
+
+* Add a configuration option to choose which action is allowed
+  between `insert`, `update` or `upsert`
 * Add the capability to get geometries from a `wkt` column in the CSV
   instead of `longitude` and `latitude`
+* Add compatibility with Lizmap Web Client 3.9
 
 ## 1.3.2 - 2025-03-18
 
