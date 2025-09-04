@@ -428,6 +428,7 @@ class serviceCtrl extends jController
         }
 
         // Add the needed columns
+        // This also adds a unique constraint to the destination table based on duplicate_check_fields content
         $addMetadataColumn = $import->addMetadataColumn();
         if (!is_array($addMetadataColumn) || $addMetadataColumn[0]->import_csv_add_metadata_column == 'f') {
             // Delete already imported data
@@ -441,8 +442,8 @@ class serviceCtrl extends jController
         }
 
         // Check for duplicates
-        $upsertConflicts = $form->getData('upsert', 'no');
-        if ($upsertConflicts == 'no') {
+        $importType = $import->getImportType();
+        if ($importType == 'insert') {
             $check_duplicate = $import->checkCsvDataDuplicatedRecords();
             if (!is_array($check_duplicate)) {
                 jForms::destroy('import~import');

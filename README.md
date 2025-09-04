@@ -24,7 +24,7 @@ The map editor will configure:
 * for **which layer(s)** the authenticated user can import data. The target layer
   PostgreSQL `schema` and `table` must be specified.
 * which **group(s) of users** can access the tool in the map interface.
-* which **fields** can be imported in the target table
+* which **fields** can be imported or modified in the target table
 * if the CSV contains **geometry data** and of which type (`lonlat`, `wkt`, `none`)
 * the set of **rules** that define a **valid record**. Each rule will be tested
   for all the **CSV features**.
@@ -32,6 +32,7 @@ The map editor will configure:
   the tool will check that this field is present and that its values are all unique.
 * The list of **fields** which must be used to **check for duplicates** between the
   CSV data and the table data.
+* which type of action you allow the user to perform: INSERT, UPDATE or UPSERT
 
 If an **error is detected** (wrong CSV format, missing fields, missing unique id field, etc.)
 the tool will cancel the import and **display an error message**.
@@ -41,17 +42,22 @@ with the **problematic identifiers**.
 
 ![sub-dock interface](media/import_check_table.jpg)
 
-If some records contained in the CSV files are **duplicates** of some target layers
-records (in the PostgreSQL table), the whole import will be **canceled** by default. A list of the
-**duplicated records identifiers** will be displayed.
+Depending on the configured type of import (insert, upsert or update), the behaviour will vary:
 
-If the user checks the `Update conflicting data` checkbox, the data from the CSV file
-which are in conflicts will be used to **update** the table data with the new values
-instead of inserting new objects.
+* For the type `insert`, if some records contained in the CSV files are **duplicates**
+  of some target layers records (in the PostgreSQL table), the whole import will be **canceled**
+  by default. A list of the **duplicated records ID** will be displayed.
 
-Conflicts are detected thanks to the list of fields configured to check for duplicates.
-These fields are defined in the column `duplicate_check_fields` of the configuration table
-(see below).
+* If the import type is configured as `upsert`, the data from the CSV file
+  which are in conflicts will be used to **update** the table data with the new values
+  instead of inserting new objects. The data not already present in the table
+  will stil be insert from the CSV to the table.
+  Conflicts are detected thanks to the list of fields configured to check for duplicates.
+  These fields are defined in the column `duplicate_check_fields` of the configuration table
+  (see below)
+
+* If the import type is configured as `update`, data will be updated based
+  on the field configured in the `unique_id_field` parameter (see below)
 
 ![sub-dock interface](media/import_duplicate_table.jpg)
 
@@ -104,18 +110,29 @@ the list of target layers. You need to define:
 * a PostgreSQL table **schema** & **name** which define the layer data source,
 * a LizMap **repository key** and **project key** which define
   on which LizMap map to activate the import tool,
+* The type of action you allow the user to do
+  * `insert`: you only accept inserts. Data which are already in the table will not be imported.
+  * `upsert`: new data will be imported, existing data will be updated from the CSV file.
+  * `update`: only data corresponding on existing features will be updated
 * the **target fields** expected to be in the CSV, written as a PostgreSQL array of text `text[]`,
+  **These fields will be the only one to be inserted or modified by the import.**
 * the **geometry source**, can be one of the following values:
   * `none` : No geometries - the source data has no geometries, or you want to insert/update only the attributes
   * `lonlat`: Longitude & Latitude - you need to have 2 fields named `longitude` and `latitude`
     containing valid coordinates
   * `wkt`: WKT - you must provide a WKT representation of the observation geometries in a field named `wkt`
+* The **field containing unique values** in the CSV.
+  * This field will be used to display the list of data not respecting the rules when the CSV contains erroneous data
+  * It is important that the field exists also in the database
+    if the type oc action is configured as `update`
+* The list of fields used to check for duplicates: `duplicate_check_fields`.
+  Conflicts are detected thanks to this list of fields
 
 Example content:
 
-| id | table_schema | table_name | lizmap_repository | lizmap_project | target_fields                        | geometry_source | unique_id_field | duplicate_check_fields |
-|----|--------------|------------|-------------------|----------------|--------------------------------------|-----------------|-----------------|------------------------|
-| 1  | demo         | trees      | tests             | import         | {height,genus,leaf_type,tree_code}   | lonlat          | id_csv          | {genus,tree_code}      |
+| id | table_schema | table_name | lizmap_repository | lizmap_project |           target_fields            | geometry_source | unique_id_field | duplicate_check_fields | import_type |
+|----|--------------|------------|-------------------|----------------|------------------------------------|-----------------|-----------------|------------------------|-------------|
+|  1 | demo         | trees      | tests             | import         | {height,genus,leaf_type,tree_code} | lonlat          | tree_code       | {genus,tree_code}      | upsert      |
 
 
 #### Field rules

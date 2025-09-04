@@ -1,9 +1,26 @@
+-- Change constraint on  geometry source
 ALTER TABLE lizmap_import_module.import_csv_destination_tables
 DROP CONSTRAINT IF EXISTS import_csv_destination_tables_geometry_source_valid
 ;
 ALTER TABLE lizmap_import_module.import_csv_destination_tables
 ADD CONSTRAINT import_csv_destination_tables_geometry_source_valid
 CHECK (geometry_source IN ('none', 'lonlat', 'wkt'));
+
+-- Add column to set the type of import
+ALTER TABLE lizmap_import_module.import_csv_destination_tables
+ADD COLUMN import_type text NOT NULL DEFAULT 'insert'
+;
+ALTER TABLE lizmap_import_module.import_csv_destination_tables
+ADD CONSTRAINT import_csv_destination_tables_import_type_valid
+CHECK (import_type IN ('insert', 'update', 'upsert'))
+;
+COMMENT ON COLUMN lizmap_import_module.import_csv_destination_tables.import_type
+IS 'Defines the type of import allowed :
+* insert = only new data,
+* update = only update based on given unique_id_field
+* upsert = insert new data & update data on conflict based on duplicate_check_fields'
+;
+
 
 CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_is_given_type(s text, t text)
 RETURNS BOOLEAN AS $BODY$
@@ -60,6 +77,7 @@ This function can be extended to user defined data types if necessary'
 -- Import the data from the temporary table to the target table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text);
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text[]);
+DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text);
 CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _temporary_table text,
     _target_schema text,
@@ -67,7 +85,8 @@ CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _target_fields text[],
     _geometry_source text,
     _import_login text,
-    _duplicate_check_fields text[])
+    _import_type text,
+    _unique_id_field text)
     RETURNS TABLE(created_id integer)
     LANGUAGE 'plpgsql'
     COST 100
@@ -82,8 +101,8 @@ DECLARE
     _target_table_pkeys json;
     _comma TEXT;
     _fields_sql_list text;
-    _duplicate_check_fields_sql_list text;
     _geometry_columns_record record;
+    _some_text text;
 BEGIN
 
     -- Get target table SRID (projection id)
@@ -101,7 +120,7 @@ BEGIN
     -- List of fields for SQL
     _fields_sql_list = '';
     SELECT INTO _fields_sql_list
-        Coalesce(string_agg(concat('"', field, '"'), ', '), '')
+        Coalesce(string_agg(concat('t."', field, '"'), ', '), '')
     FROM (
         SELECT unnest(_target_fields) AS field
     ) AS fields
@@ -110,32 +129,66 @@ BEGIN
     -- geometry
     IF _geometry_source IN ('lonlat', 'wkt') THEN
         _fields_sql_list = _fields_sql_list || format(
-            ', "%1$s" ',
+            ', t."%1$s" ',
             quote_ident(_geometry_columns_record.f_geometry_column)
         );
     END IF;
 
     -- Build the INSERT SQL
     sql_text = '';
-    sql_template := $$
-        INSERT INTO "%1$s"."%2$s" AS t
-        (
-    $$;
+
+    IF _import_type IN ('insert', 'upsert') THEN
+        -- INSERT or UPSERT
+        sql_template := $$
+            INSERT INTO "%1$s"."%2$s" AS t
+            (
+        $$;
+    ELSE
+        -- UPDATE
+        sql_template := $$
+            UPDATE "%1$s"."%2$s" AS t
+            SET (
+        $$;
+
+    END IF;
     sql_text = sql_text || format(sql_template,
         _target_schema,
         _target_table
     );
 
     -- List of fields
-    sql_text = sql_text || _fields_sql_list;
+    _some_text = '';
+
+    _some_text = _some_text || _fields_sql_list;
 
     -- import metadata
-    sql_text = sql_text || ', "import_metadata" ';
+    _some_text = _some_text || ', "import_metadata" ';
 
-    sql_text = sql_text || $$
-        )
-        SELECT
-    $$;
+    -- add the list of fields
+    sql_text = sql_text || replace(_some_text, 't.', '');
+
+    -- Adapt SQL depending on the import type
+    IF _import_type IN ('insert', 'upsert') THEN
+        sql_text = sql_text || $$
+            )
+            SELECT
+        $$;
+    ELSE
+        sql_text = sql_text || format(
+            $$
+                ) = (
+                    %1$s
+                )
+                FROM (
+                    SELECT
+            $$,
+            replace(
+                replace(_some_text, 't.', 'f.'),
+                '"import_metadata"',
+                'f."import_metadata"'
+            )
+        );
+    END IF;
 
     -- Values from the temporary table
     _fields_sql_list = '';
@@ -154,6 +207,7 @@ BEGIN
     -- geometry value
     IF _geometry_source = 'lonlat' THEN
         sql_template = $$
+            -- comma is important because some fields exists before
             ,
             CASE
                 WHEN
@@ -170,7 +224,7 @@ BEGIN
                         %1$s
                     )
                 ELSE NULL
-            END
+            END AS geom
         $$;
         sql_text = sql_text || format(sql_template,
             _geometry_columns_record.srid
@@ -178,6 +232,7 @@ BEGIN
 
     ELSIF _geometry_source = 'wkt' THEN
         sql_template = $$
+            -- comma is important because some fields exists before
             ,
             CASE
                 WHEN
@@ -192,31 +247,17 @@ BEGIN
                         %1$s
                     )
                 ELSE NULL
-            END
+            END AS geom
         $$;
         sql_text = sql_text || format(sql_template,
             _geometry_columns_record.srid
         );
     END IF;
 
-    -- _duplicate_check_fields_sql_list
-    _comma = '';
-    _duplicate_check_fields_sql_list = '';
-    FOR _var_csv_field IN
-        SELECT field FROM unnest(_duplicate_check_fields) AS field
-    LOOP
-        sql_template = '%1$s s."%2$s"';
-        _duplicate_check_fields_sql_list = _duplicate_check_fields_sql_list || format(sql_template,
-            _comma,
-            _var_csv_field
-        );
-        -- concatenate to have something like "field_1", '@', "field_2"
-        _comma = $$, '@', $$;
-    END LOOP;
-
     -- import metadata
     sql_text = sql_text || format(
         $$
+            -- comma is important because some fields exists before
             ,
             json_build_object(
                 'import_login', '%1$s',
@@ -226,57 +267,117 @@ BEGIN
         ) AS import_metadata
         $$,
         _import_login,
-        _temporary_table,
-        _duplicate_check_fields_sql_list
-    );
-
-    -- If the data is already there, update
-    sql_text = sql_text || format(
-        $$
-            FROM "%1$s"."%3$s" AS s
-            ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
-            DO UPDATE
-            SET
-        $$,
-        _target_schema,
-        _target_table,
         _temporary_table
     );
 
-    -- UPSERT List of fields
-    _comma = '';
-    FOR _var_csv_field IN
-        SELECT field FROM unnest(_target_fields) AS field
-    LOOP
-        sql_template = '%1$s "%2$s" = EXCLUDED."%2$s"';
-        sql_text = sql_text || format(sql_template,
-            _comma,
-            _var_csv_field
-        );
-        _comma = ', ';
-    END LOOP;
+    -- Get data from source
+    sql_text = sql_text || format(
+        $$
+            FROM "%1$s"."%2$s" AS s
+        $$,
+        _target_schema,
+        _temporary_table
+    );
 
-    -- UPSERT geometry
-    IF _geometry_source IN ('lonlat', 'wkt') THEN
+    -- Adapt SQL depending on the import type
+    IF _import_type = 'update' THEN
         sql_text = sql_text || format(
-            ', "%1$s" = EXCLUDED."%1$s"',
-            quote_ident(_geometry_columns_record.f_geometry_column)
+            $$
+                ) AS f
+                WHERE True
+                AND t."%1$s" = f."%1$s"
+            $$,
+            _unique_id_field
+        );
+
+    END IF;
+
+    -- INSERT
+    -- Do not insert conflicted data
+    IF _import_type = 'insert' THEN
+        sql_text = sql_text || format(
+            $$
+                ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
+                DO NOTHING
+            $$,
+            _target_schema,
+            _target_table
         );
     END IF;
 
-    -- UPSERT import metadata
-    sql_text = sql_text ||
-        $$
-            ,
-            "import_metadata" = (
-                jsonb_set(
-                    EXCLUDED."import_metadata"::jsonb,
-                    '{action}',
-                    '"U"'
-                )
-            )::jsonb
-        $$
-    ;
+    -- UPSERT : If the data is already there, update
+    IF _import_type = 'upsert' THEN
+        sql_text = sql_text || format(
+            $$
+                ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
+                DO UPDATE
+                SET
+            $$,
+            _target_schema,
+            _target_table
+        );
+
+        -- UPSERT List of fields
+        _comma = '';
+        FOR _var_csv_field IN
+            SELECT field FROM unnest(_target_fields) AS field
+        LOOP
+            sql_template = '%1$s "%2$s" = EXCLUDED."%2$s"';
+            sql_text = sql_text || format(sql_template,
+                _comma,
+                _var_csv_field
+            );
+            _comma = ', ';
+        END LOOP;
+
+        -- UPSERT geometry
+        IF _geometry_source IN ('lonlat', 'wkt') THEN
+            sql_text = sql_text || format(
+                ', "%1$s" = EXCLUDED."%1$s"',
+                quote_ident(_geometry_columns_record.f_geometry_column)
+            );
+        END IF;
+
+        -- UPSERT import metadata
+        sql_text = sql_text ||
+            $$
+                ,
+                "import_metadata" = (
+                    jsonb_set(
+                        EXCLUDED."import_metadata"::jsonb,
+                        '{action}',
+                        '"U"'
+                    )
+                )::jsonb
+            $$
+        ;
+
+        -- UPSERT only when needed
+        sql_text = sql_text || '
+            WHERE True AND (
+        ';
+        _comma = '';
+        FOR _var_csv_field IN
+            SELECT field FROM unnest(_target_fields) AS field
+        LOOP
+            sql_template = ' %1$s t."%2$s" != EXCLUDED."%2$s"';
+            sql_text = sql_text || format(sql_template,
+                _comma,
+                _var_csv_field
+            );
+            _comma = ' OR ';
+        END LOOP;
+
+        IF _geometry_source IN ('lonlat', 'wkt') THEN
+            sql_text = sql_text || format(
+                ' OR t."%1$s" != EXCLUDED."%1$s"',
+                quote_ident(_geometry_columns_record.f_geometry_column)
+            );
+        END IF;
+        sql_text = sql_text || '
+            )
+        ';
+    END IF;
 
     -- return the primary keys inserted or modified
     sql_text = sql_text || format(
@@ -294,6 +395,5 @@ BEGIN
 END
 $BODY$;
 
-COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text[])
-IS 'Import the data from the temporary table into the target table'
-;
+COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text)
+    IS 'Import the data from the temporary table into the target table';

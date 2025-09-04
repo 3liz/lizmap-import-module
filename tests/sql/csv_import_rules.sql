@@ -7,13 +7,15 @@ INSERT INTO lizmap_import_module.import_csv_destination_tables (
         table_schema, table_name,
         lizmap_repository, lizmap_project,
         target_fields, geometry_source,
-        unique_id_field, duplicate_check_fields
+        unique_id_field, duplicate_check_fields,
+        import_type
 )
 VALUES (
     'demo', 'trees',
     'tests', 'import',
     ARRAY['height', 'genus', 'leaf_type', 'tree_code'], 'lonlat',
-    'id_csv', ARRAY['genus', 'tree_code']
+    'tree_code', ARRAY['genus', 'tree_code'],
+    'insert'
 )
 ;
 
