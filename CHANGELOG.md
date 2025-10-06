@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.4.1 - 2025-10-06
+
+* Fix temporary tables not dropped after a successful import
+
 ## 1.4.0 - 2025-09-04
 
 * Add a configuration option to choose which action is allowed
