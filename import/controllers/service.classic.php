@@ -521,7 +521,7 @@ class serviceCtrl extends jController
 
         // Clean
         jForms::destroy('import~import');
-        // $import->clean();
+        $import->clean();
 
         // Return data
         $rep->data = $return;
