@@ -347,3 +347,135 @@ $BODY$;
 
 COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text)
     IS 'Import the data from the temporary table into the target table';
+
+
+-- Add fields
+ALTER TABLE lizmap_import_module.import_csv_field_rules ADD COLUMN IF NOT EXISTS lizmap_repository text;
+ALTER TABLE lizmap_import_module.import_csv_field_rules ADD COLUMN IF NOT EXISTS lizmap_project text;
+
+
+-- Check the validity of all the field values inside the given table
+DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_validity(text, text, text, text, text);
+DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_validity(text, text, text, text, text, text, text);
+CREATE FUNCTION lizmap_import_module.import_csv_check_validity(
+    _temporary_table text,
+    _target_schema text,
+    _target_table text,
+    _lizmap_repository text,
+    _lizmap_project text,
+    _criteria_type text,
+    _unique_id_field text
+)
+RETURNS TABLE (
+    id_criteria text,
+    code text,
+    label text,
+    description text,
+    condition text,
+    nb_lines integer,
+    ids text[]
+) AS
+$BODY$
+DECLARE var_id_criteria INTEGER;
+DECLARE var_code TEXT;
+DECLARE var_label TEXT;
+DECLARE var_description TEXT;
+DECLARE var_condition TEXT;
+DECLARE var_join_table TEXT;
+DECLARE sql_template TEXT;
+DECLARE sql_text TEXT;
+DECLARE rec record;
+
+BEGIN
+
+    -- Create temporary table to store the results
+    CREATE TEMPORARY TABLE temp_results (
+        id_criteria text,
+        code text,
+        label text,
+        description text,
+        condition text,
+        nb_lines integer,
+        ids text[]
+    ) ON COMMIT DROP
+    ;
+
+    -- Get
+
+    -- Loop for each criteria
+    FOR var_id_criteria, var_code, var_label, var_description, var_condition, var_join_table IN
+        SELECT c.id AS id_criteria, c.code, c.label, c.description, c.condition, c.join_table
+        FROM lizmap_import_module.import_csv_field_rules AS c
+        WHERE criteria_type = _criteria_type
+        AND target_table_schema = _target_schema::text
+        AND target_table_name = _target_table::text
+        AND (lizmap_repository = _lizmap_repository::text OR lizmap_repository IS NULL)
+        AND (lizmap_project = _lizmap_project::text OR lizmap_project IS NULL)
+        ORDER BY c.id
+
+    LOOP
+        BEGIN
+            sql_template := '
+            INSERT INTO temp_results
+            SELECT
+                %s AS id_criteria, %s AS code,
+                %s AS label, %s AS description,
+                %s AS condition,
+                count(o."%s") AS nb_lines,
+                array_agg(o."%s") AS ids
+            FROM "%s"."%s" AS o
+            ';
+            sql_text := format(
+                sql_template,
+                var_id_criteria, quote_literal(var_code),
+                quote_literal(var_label), quote_nullable(var_description),
+                quote_literal(var_condition),
+                _unique_id_field,
+                _unique_id_field,
+                _target_schema,
+                _temporary_table
+            );
+
+            -- optionally add the JOIN clause
+            IF var_join_table IS NOT NULL THEN
+                sql_template := '
+                , %s AS t
+                ';
+                sql_text := sql_text || format(
+                    sql_template,
+                    var_join_table
+                );
+            END IF;
+
+            -- Condition du critère
+            sql_template :=  '
+            WHERE True
+            -- condition
+            AND NOT (
+                %s
+            )
+            ';
+            sql_text := sql_text || format(sql_template, var_condition);
+
+            -- On récupère les données
+            EXECUTE sql_text;
+        EXCEPTION WHEN others THEN
+            RAISE NOTICE '%', concat(var_code, ': ' , var_label, '. Description: ', var_description);
+            RAISE NOTICE '%', SQLERRM;
+            -- Log SQL
+            RAISE NOTICE '%' , sql_text;
+        END;
+
+    END LOOP;
+
+    RETURN QUERY SELECT * FROM temp_results;
+
+END
+$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100
+;
+
+COMMENT ON FUNCTION lizmap_import_module.import_csv_check_validity(text, text, text, text, text, text, text)
+IS 'Check the validity of the source data against the rules from the table import_csv_field_rules'
+;

@@ -579,13 +579,15 @@ class ImportManager
     public function validateCsvData($criteria_type)
     {
         $sql = "SELECT *, array_to_string(ids, ', ') AS ids_text";
-        $sql .= ' FROM lizmap_import_module.import_csv_check_validity($1, $2, $3, $4, $5)';
+        $sql .= ' FROM lizmap_import_module.import_csv_check_validity($1, $2, $3, $4, $5, $6, $7)';
         $sql .= ' WHERE nb_lines > 0';
         $sql .= ' ';
         $params = array(
             $this->temporaryTable.'_target',
             $this->targetSchema,
             $this->targetTable,
+            $this->repository,
+            $this->project,
             $criteria_type,
             $this->uniqueIdField,
         );

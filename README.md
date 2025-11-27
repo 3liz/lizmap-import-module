@@ -150,6 +150,11 @@ file respect some **pre-defined conditions**.
 You can have more than one line per target layer. The target layer is defined
 by its `target_table_schema` and `target_table_name`.
 
+You also need to specify the Lizmap **repository** and **project**,
+in the fields `lizmap_repository` and `lizmap_project`
+since the rules can differ from one project to another.
+If you want the rules to be applied on any project, just use `NULL` values in these fields.
+
 The `criteria_type` column must only accept values among:
 
 * `not_null`: the rule defines that the field must not be empty (or `NULL`)
@@ -169,15 +174,15 @@ in the examples below.
 
 Example content:
 
-| id | target_table_schema | target_table_name | criteria_type | code               | label                                         | description | condition                                                            | join_table |
-|----|---------------------|-------------------|---------------|--------------------|-----------------------------------------------|-------------|----------------------------------------------------------------------|------------|
-| 1  | demo                | trees             | not_null      | genus_not_null     | The field genus cannot be empty               |             | genus IS NOT NULL                                                    |            |
-| 2  | demo                | trees             | not_null      | leaf_type_not_null | The field leaf_type cannot be empty           |             | leaf_type IS NOT NULL                                                |            |
-| 3  | demo                | trees             | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer')     |            |
-| 4  | demo                | trees             | format        | longitude_format   | The field longitude must be a real number     |             | lizmap_import_module.import_csv_is_given_type(longitude, 'real')     |            |
-| 5  | demo                | trees             | format        | latitude_format    | The field latitude must be a real number      |             | lizmap_import_module.import_csv_is_given_type(latitude, 'real')      |            |
-| 6  | demo                | trees             | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                          |            |
-| 7  | demo                | trees             | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                                 |            |
+| id | target_table_schema | target_table_name | lizmap_repository | lizmap_project | criteria_type | code               | label                                         | description | condition                                                            | join_table |
+|----|---------------------|-------------------|-------------------|----------------|---------------|--------------------|-----------------------------------------------|-------------|----------------------------------------------------------------------|------------|
+| 1  | demo                | trees             | test              | import         | not_null      | genus_not_null     | The field genus cannot be empty               |             | genus IS NOT NULL                                                    |            |
+| 2  | demo                | trees             | test              | import         | not_null      | leaf_type_not_null | The field leaf_type cannot be empty           |             | leaf_type IS NOT NULL                                                |            |
+| 3  | demo                | trees             | test              | import         | format        | height_format      | The field height must be a real number        |             | lizmap_import_module.import_csv_is_given_type(height, 'integer')     |            |
+| 4  | demo                | trees             | test              | import         | format        | longitude_format   | The field longitude must be a real number     |             | lizmap_import_module.import_csv_is_given_type(longitude, 'real')     |            |
+| 5  | demo                | trees             | test              | import         | format        | latitude_format    | The field latitude must be a real number      |             | lizmap_import_module.import_csv_is_given_type(latitude, 'real')      |            |
+| 6  | demo                | trees             | test              | import         | valid         | height_valid       | The height value must be between 1.0 and 30.0 |             | height BETWEEN 1.0 AND 30.0                                          |            |
+| 7  | demo                | trees             | test              | import         | valid         | genus_valid        | The genus must be Platanus or Cupressus       |             | "genus IN ('Cupressus', 'Platanus')"                                 |            |
 
 Example of a rule to check for the WKT column format:
 

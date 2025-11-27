@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS lizmap_import_module.import_csv_field_rules (
     id serial not null PRIMARY KEY,
     target_table_schema text NOT NULL,
     target_table_name text NOT NULL,
+    lizmap_repository text,
+    lizmap_project text,
     criteria_type text NOT NULL,
     code text NOT NULL,
     label text NOT NULL,
@@ -239,10 +241,13 @@ This function can be extended to user defined data types if necessary'
 
 -- Check the validity of all the field values inside the given table
 DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_validity(text, text, text, text, text);
+DROP FUNCTION IF EXISTS lizmap_import_module.import_csv_check_validity(text, text, text, text, text, text, text);
 CREATE FUNCTION lizmap_import_module.import_csv_check_validity(
     _temporary_table text,
     _target_schema text,
     _target_table text,
+    _lizmap_repository text,
+    _lizmap_project text,
     _criteria_type text,
     _unique_id_field text
 )
@@ -289,6 +294,8 @@ BEGIN
         WHERE criteria_type = _criteria_type
         AND target_table_schema = _target_schema::text
         AND target_table_name = _target_table::text
+        AND (lizmap_repository = _lizmap_repository::text OR lizmap_repository IS NULL)
+        AND (lizmap_project = _lizmap_project::text OR lizmap_project IS NULL)
         ORDER BY c.id
 
     LOOP
@@ -354,7 +361,7 @@ LANGUAGE plpgsql VOLATILE
 COST 100
 ;
 
-COMMENT ON FUNCTION lizmap_import_module.import_csv_check_validity(text, text, text, text, text)
+COMMENT ON FUNCTION lizmap_import_module.import_csv_check_validity(text, text, text, text, text, text, text)
 IS 'Check the validity of the source data against the rules from the table import_csv_field_rules'
 ;
 
