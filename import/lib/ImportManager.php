@@ -628,8 +628,8 @@ class ImportManager
         $sql = ' SELECT count("'.$this->uniqueIdField.'")::smallint AS missing_count, ';
         $sql .= ' string_agg("'.$this->uniqueIdField.'"::text, \', \' ORDER BY "'.$this->uniqueIdField.'") AS missing_ids ';
         $sql .= ' FROM "'.$this->targetSchema.'"."'.$this->temporaryTable.'_target" ';
-        $sql .= ' WHERE "'.$this->uniqueIdField.'" NOT IN ( ';
-        $sql .= '     SELECT "'.$this->uniqueIdField.'" ';
+        $sql .= ' WHERE "'.$this->uniqueIdField.'"::text NOT IN ( ';
+        $sql .= '     SELECT "'.$this->uniqueIdField.'"::text ';
         $sql .= '     FROM "'.$this->targetSchema.'"."'.$this->targetTable.'" ';
         $sql .= ') ';
         $params = array();

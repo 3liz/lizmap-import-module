@@ -503,6 +503,14 @@ BEGIN
         concat('"', _target_schema, '"."', _target_table, '"')
     );
 
+    -- for UPDATE
+    -- We need to add the "_unique_id_field" because it is used in the WHERE clause
+    -- We add it only if it is not already in the target_fields parameter
+    IF _import_type = 'update' AND NOT _unique_id_field = ANY (_target_fields)
+    THEN
+        _target_fields = array_append(_target_fields, _unique_id_field);
+    END IF;
+
     -- List of fields for SQL
     _fields_sql_list = '';
     SELECT INTO _fields_sql_list
@@ -710,7 +718,7 @@ BEGIN
             $$
                 ) AS f
                 WHERE True
-                AND t."%1$s" = f."%1$s"
+                AND t."%1$s"::text = f."%1$s"::text
             $$,
             _unique_id_field
         );
@@ -788,7 +796,7 @@ BEGIN
     -- return the primary keys inserted or modified
     sql_text = sql_text || format(
         $$
-            RETURNING "%1$s"
+            RETURNING t."%1$s"
         $$,
         _target_table_pkeys->0->>'field_name'
     );
