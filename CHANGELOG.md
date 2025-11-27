@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.4.2 - 2025-11-27
+
+* Rules - Add fields lizmap_repository & lizmap_project
+  You can now control which rules are used for which Lizmap project
+* Fix bugs for UPDATE method:
+  * cast columns into text for safe value comparisons,
+  * add missing columns used in the WHERE clause,
+  * add missing table alias in the WHERE clause
+
+
 ## 1.4.1 - 2025-10-06
 
 * Fix temporary tables not dropped after a successful import
