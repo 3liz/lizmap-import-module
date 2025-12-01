@@ -431,11 +431,20 @@ class serviceCtrl extends jController
         // This also adds a unique constraint to the destination table based on duplicate_check_fields content
         $addMetadataColumn = $import->addMetadataColumn();
         if (!is_array($addMetadataColumn) || $addMetadataColumn[0]->import_csv_add_metadata_column == 'f') {
+            // Get getDuplicateCheckFields
+            $getDuplicateCheckFields = $import->getDuplicateCheckFields();
+
             // Delete already imported data
             $import->deleteImportedData();
             jForms::destroy('import~import');
             $import->clean();
-            $return['message'] = \jLocale::get('import~import.form.error.cannot.add.import.metadata.column', array($this->tableName));
+            $return['message'] = \jLocale::get(
+                'import~import.form.error.cannot.add.import.metadata.column',
+                array(
+                    $this->tableName,
+                    implode(', ', $getDuplicateCheckFields),
+                )
+            );
             $rep->data = $return;
 
             return $rep;

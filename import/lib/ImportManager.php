@@ -175,6 +175,17 @@ class ImportManager
     }
 
     /**
+     * Return the duplicateCheckFields
+     *
+     * @return array Duplicate check fields. Example array('genus', 'tree_code')
+     */
+    public function getDuplicateCheckFields()
+    {
+        return $this->duplicateCheckFields;
+    }
+
+
+    /**
      * Runs the needed check on the CSV structure.
      *
      * @param string $csv_content Content of the observation CSV file
