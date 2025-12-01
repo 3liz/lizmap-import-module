@@ -273,13 +273,15 @@ class serviceCtrl extends jController
         }
 
         // Import library
+        $separator = $form->getData('separator');
         $import = new \ImportCsv\ImportManager(
             $repository,
             $project,
             $this->schema,
             $this->tableName,
             $csv_target_directory.'/'.$csv_target_filename,
-            $this->profile
+            $this->profile,
+            $separator
         );
 
         // Check the CSV structure

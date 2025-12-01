@@ -29,7 +29,15 @@ class ImportManager
     protected $csvFile;
 
     // CSV separator
-    protected $csvSeparator = ',';
+    protected $csvSeparator;
+
+    // Allowed CSV separator
+    protected $allowedCsvSeparators = array(
+        'comma' => ',',
+        'tab' => "\t",
+        'semicolon' => ';',
+        'pipe' => '|',
+    );
 
     // CSV header
     protected $header;
@@ -81,7 +89,7 @@ class ImportManager
      * @param mixed  $targetTable
      * @param mixed  $profile
      */
-    public function __construct($repositoryKey, $projectKey, $targetSchema, $targetTable, $csvFile, $profile)
+    public function __construct($repositoryKey, $projectKey, $targetSchema, $targetTable, $csvFile, $profile, $csvSeparator='comma')
     {
         // Set the properties
         $this->repository = $repositoryKey;
@@ -90,6 +98,10 @@ class ImportManager
         $this->targetTable = $targetTable;
         $this->profile = $profile;
         $this->csvFile = $csvFile;
+        if (!array_key_exists($csvSeparator, $this->allowedCsvSeparators)) {
+            $csvSeparator = ',';
+        }
+        $this->csvSeparator = $this->allowedCsvSeparators[$csvSeparator];
 
         // Get the user login
         $login = null;

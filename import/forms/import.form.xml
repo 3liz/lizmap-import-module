@@ -7,6 +7,16 @@
     <help locale="import~import.input.csv.help"/>
 </upload>
 
+<menulist ref="separator" required="true">
+    <label locale="import~import.input.separator"/>
+    <hint locale="import~import.input.separator.help"/>
+    <help locale="import~import.input.separator.help"/>
+    <item locale="import~import.input.separator.item.comma.label" value="comma" />
+    <item locale="import~import.input.separator.item.tab.label" value="tab" />
+    <item locale="import~import.input.separator.item.semicolon.label" value="semicolon" />
+    <item locale="import~import.input.separator.item.pipe.label" value="pipe" />
+</menulist> -->
+
 <!--
 NOT USED BECAUSE THE CONFIGURATION IS DONE IN TABLE "import_csv_destination_tables"
 <menulist ref="geometry_format" required="true">
