@@ -124,16 +124,18 @@ BEGIN
         -- Create unique index
         sql_template = $$
             ALTER TABLE "%1$s"."%2$s"
-            DROP CONSTRAINT IF EXISTS "%1$s_%2$s_import_csv_unique"
+            DROP CONSTRAINT IF EXISTS "import_csv_unique_%3$s"
             ;
             ALTER TABLE "%1$s"."%2$s"
-            ADD CONSTRAINT "%1$s_%2$s_import_csv_unique"
-            UNIQUE (%3$s);
+            ADD CONSTRAINT "import_csv_unique_%3$s"
+            UNIQUE (%4$s);
             ;
         $$;
         sql_text = format(sql_template,
             _target_schema,
             _target_table,
+            -- use md5 to always have a name under 64 character (schema, table and list of fields can exceed this value)
+            md5(concat(_target_schema, '@', _target_table, '@', array_to_string(_duplicate_check_fields, '@'))),
             _duplicate_check_fields_sql_list
         );
         EXECUTE sql_text;
@@ -478,7 +480,8 @@ CREATE OR REPLACE FUNCTION lizmap_import_module.import_csv_data_to_target_table(
     _geometry_source text,
     _import_login text,
     _import_type text,
-    _unique_id_field text)
+    _unique_id_field text,
+    _duplicate_check_fields text[])
     RETURNS TABLE(created_id integer)
     LANGUAGE 'plpgsql'
     COST 100
@@ -739,11 +742,12 @@ BEGIN
     IF _import_type = 'insert' THEN
         sql_text = sql_text || format(
             $$
-                ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
+                ON CONFLICT ON CONSTRAINT "import_csv_unique_%3$s"
                 DO NOTHING
             $$,
             _target_schema,
-            _target_table
+            _target_table,
+            md5(concat(_target_schema, '@', _target_table, '@', array_to_string(_duplicate_check_fields, '@')))
         );
     END IF;
 
@@ -751,12 +755,13 @@ BEGIN
     IF _import_type = 'upsert' THEN
         sql_text = sql_text || format(
             $$
-                ON CONFLICT ON CONSTRAINT "%1$s_%2$s_import_csv_unique"
+                ON CONFLICT ON CONSTRAINT "import_csv_unique_%3$s"
                 DO UPDATE
                 SET
             $$,
             _target_schema,
-            _target_table
+            _target_table,
+            md5(concat(_target_schema, '@', _target_table, '@', array_to_string(_duplicate_check_fields, '@')))
         );
 
         -- UPSERT List of fields
@@ -816,7 +821,7 @@ BEGIN
 END
 $BODY$;
 
-COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text)
+COMMENT ON FUNCTION lizmap_import_module.import_csv_data_to_target_table(text, text, text, text[], text, text, text, text, text[])
     IS 'Import the data from the temporary table into the target table';
 
 -- Delete the imported data, for example if errors have been encountered

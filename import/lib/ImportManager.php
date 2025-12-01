@@ -678,7 +678,8 @@ class ImportManager
             $1, $2, $3,
             string_to_array($4, ','),
             $5, $6,
-            $7, $8
+            $7, $8,
+            string_to_array($9, ',')
         )
         ";
         $params = array(
@@ -690,6 +691,7 @@ class ImportManager
             $login,
             $this->importType,
             $this->uniqueIdField,
+            implode(',', $this->duplicateCheckFields),
         );
 
         $import_data = $this->query($sql, $params);
