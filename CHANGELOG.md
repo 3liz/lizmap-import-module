@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.4.3 - 2025-12-01
+
+* Add an option in the form to choose the CSV field separator: comma, tab, semicolon, pipe
+* Improve error message when failing to create table metadata column and constraint
+* Modify the name of the created unique constraint.*
+  Use a md5 to allow multiple constraints in the same table
+
+
 ## 1.4.2 - 2025-11-27
 
 * Rules - Add fields lizmap_repository & lizmap_project
