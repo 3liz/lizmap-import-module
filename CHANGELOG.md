@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.0 - 2026-11-25
+
 * Compatibility with Lizmap Web Client 3.10, 3.8 minimum
 * Tabs of the import form with the style of Lizmap 3.10
 * Fix the message of the result tab, which was empty
