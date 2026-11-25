@@ -57,6 +57,84 @@
     }
 
     /**
+     * Check if Lizmap uses Bootstrap 5 (Lizmap 3.10 and above) or Bootstrap 2 (before).
+     *
+     * Bootstrap 5 is loaded as a script which defines the global object bootstrap.
+     *
+     * @return {boolean} True for Bootstrap 5
+     */
+    function isBootstrap5() {
+        return typeof window.bootstrap !== 'undefined' && typeof window.bootstrap.Tab !== 'undefined';
+    }
+
+    /**
+     * Adapt the tabs of the import form, written for Bootstrap 2, to Bootstrap 5.
+     *
+     * With Bootstrap 2 (before Lizmap 3.10), nothing is changed. With Bootstrap 5, the links of the tabs
+     * get the class nav-link and the attribute data-bs-toggle, the active tab is marked on its link,
+     * and the container gets the class import-bs5 used by the CSS of the flat style of Lizmap.
+     *
+     * @param {HTMLElement} container - The element containing the ul.nav-tabs and the div.tab-pane
+     */
+    function adaptTabs(container) {
+        if (!container || !isBootstrap5()) {
+            return;
+        }
+        container.classList.add('import-bs5');
+        for (const item of container.querySelectorAll('ul.nav-tabs > li')) {
+            const link = item.querySelector('a');
+            item.classList.add('nav-item');
+            link.classList.add('nav-link');
+            link.setAttribute('data-bs-toggle', 'tab');
+            link.removeAttribute('data-toggle');
+            if (item.classList.contains('active')) {
+                link.classList.add('active');
+                item.classList.remove('active');
+            }
+        }
+    }
+
+    /**
+     * Display a tab of the import form, with Bootstrap 5 or Bootstrap 2.
+     *
+     * @param {string} target - The id of the tab pane, like #import_results_tab
+     */
+    function showTab(target) {
+        const link = document.querySelector(`#import_tab_div ul.nav-tabs a[href="${target}"]`);
+        if (!link) {
+            return;
+        }
+        if (isBootstrap5()) {
+            window.bootstrap.Tab.getOrCreateInstance(link).show();
+        } else {
+            $(link).tab('show');
+        }
+    }
+
+    /**
+     * Redraw a layer of the map, so that it displays the imported data.
+     *
+     * Same method as the edition of Lizmap 3.9 and 3.10 (redrawLayerSource in edition.js): the layer states
+     * of mainLizmap.state have no method to reload a layer, so the OpenLayers layer is taken from the map,
+     * which also handles the layers grouped in a single WMS image. A parameter is changed for a WMS source,
+     * so that the browser does not answer from its cache.
+     *
+     * @param {string} layerName - The name of the layer
+     */
+    function redrawLayer(layerName) {
+        const olLayer = lizMap.mainLizmap.map.getLayerByName(layerName);
+        if (!olLayer) {
+            return;
+        }
+        const source = olLayer.getSource();
+        if (typeof source.updateParams === 'function') {
+            source.updateParams({ 'LIZMAP_REDRAW': Date.now() });
+        } else if (typeof source.refresh === 'function') {
+            source.refresh();
+        }
+    }
+
+    /**
      * Add the given HTML to a new tab in the layer sub dock
      *
      * @param {string} html - The HTML content to add in the sub dock
@@ -70,10 +148,18 @@
                 </dd>
             `;
 
-            // Add content in #sub-dock
+            // Add content in the list of the layer information of the sub-dock:
+            // with the class dl-vertical before Lizmap 3.10, without it after
             const previousBloc = document.getElementById('import-csv');
             if (previousBloc) previousBloc.remove();
-            document.querySelector('#sub-dock div.sub-metadata div.menu-content dl.dl-vertical').insertAdjacentHTML('beforeend', content);
+            const layerInformation = document.querySelector('#sub-dock div.sub-metadata div.menu-content > dl');
+            if (!layerInformation) {
+                return;
+            }
+            layerInformation.insertAdjacentHTML('beforeend', content);
+
+            // Tabs with Bootstrap 5 and the flat style of Lizmap 3.10 and above
+            adaptTabs(document.getElementById('import_tab_div'));
 
             // Activate the form submit
             onImportFormSubmit();
@@ -190,14 +276,14 @@
                     }
 
                     $('#import_validation_' + type_criteria).html(table_header + html);
-                    $('a[href="#import_validation_tab"]').click();
+                    showTab('#import_validation_tab');
                 }
 
                 if (action == 'import') {
                     let status_import = (response.status_import == 0) ? 'error' : 'info';
 
                     // import has been tried: open the result tab
-                    $('a[href="#import_results_tab"]').click();
+                    showTab('#import_results_tab');
 
                     if (status_import == 'error') {
                         // Add data in the error table
@@ -210,19 +296,19 @@
                                 $('#import_errors_missing_ids').html(response.data['missing_ids'])
                             }
                             $('#import_errors').show();
-                            $('a[href="#import_results_tab"]').click();
+                            showTab('#import_results_tab');
                         } else {
                             // Display the validation tab
-                            $('a[href="#import_validation_tab"]').click();
+                            showTab('#import_validation_tab');
                         }
 
                         // Empty the data from the success table
-                        $('#import_results_table').html('-');
+                        $('#import_results_data').html('-');
 
                         // Display message
                         let msg = response.message;
                         lizMap.addMessage(msg, status_import, true);
-                        $('#import_message_result').html("❗" + msg).css('color', 'red');
+                        $('#import_message_resultat').html("❗" + msg).css('color', 'red');
 
                     } else {
                         // Empty data in the error table
@@ -233,24 +319,20 @@
                         $('#import_errors_missing_ids').html('-');
 
                         // Add data in the result table
-                        $('#import_results_table').html(response.data['records']['nb']);
+                        $('#import_results_data').html(response.data['records']['nb']);
                         // Display message
                         let msg = importLocales['form.error.data.import.failure'];
                         if (response.data['records']['nb'] > 0) {
                             msg = response.message;
                         }
                         lizMap.addMessage(msg, status_import, true);
-                        $('#import_message_result')
+                        $('#import_message_resultat')
                             .html("✅ " + msg)
                             .css('color', 'green')
                             ;
 
-                        // Refresh the layer
-                        let layerName = form_data.get('layer_name');
-                        let oLayers = lizMap.map.getLayersByName(layerName);
-                        if ( oLayers.length > 0 ){
-                            oLayers[0].redraw(true);
-                        }
+                        // Redraw the layer to display the imported data
+                        redrawLayer(form_data.get('layer_name'));
                     }
 
                     return false;

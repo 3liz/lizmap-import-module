@@ -61,3 +61,36 @@
 #jforms_import_import_upsert_label {
   display: inline;
 }
+
+/*
+Lizmap 3.10 and above (Bootstrap 5): flat tabs like the forms of Lizmap, with only a bigger bottom
+border for the active tab. The class import-bs5 is added by import.js to the tabs container.
+*/
+#sub-dock .import-bs5 ul.nav-tabs {
+  border-bottom: 1px solid var(--color-contrasted-elements-light);
+}
+
+#sub-dock .import-bs5 .nav-tabs > li > a.nav-link {
+  color: var(--color-text-primary);
+  padding: 5px;
+  border: none;
+}
+
+#sub-dock .import-bs5 .nav-tabs > li > a.nav-link:hover,
+#sub-dock .import-bs5 .nav-tabs > li > a.nav-link:focus,
+#sub-dock .import-bs5 .nav-tabs > li > a.nav-link.active {
+  background: none;
+  border: none;
+  border-bottom: 3px solid var(--color-contrasted-elements);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#sub-dock .import-bs5 .nav-tabs > li > a.nav-link.active {
+  cursor: auto;
+}
+
+#sub-dock .import-bs5 div.tab-pane {
+  padding-top: 5px;
+}

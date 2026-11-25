@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* Compatibility with Lizmap Web Client 3.10, 3.8 minimum
+* Tabs of the import form with the style of Lizmap 3.10
+* Fix the message of the result tab, which was empty
+* Fix the refresh of the layer after the import
+
 ## 1.4.3 - 2025-12-01
 
 * Add an option in the form to choose the CSV field separator: comma, tab, semicolon, pipe
